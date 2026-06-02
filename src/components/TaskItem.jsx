@@ -1,26 +1,35 @@
 import { memo } from 'react'
-import { CheckCircle2, Circle, Edit2, Trash2, AlertCircle } from 'lucide-react'
+import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle } from 'lucide-react'
 import { db } from '../lib/firebase'
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
-import { ROLE_BADGE_STYLES, PRIORITY_CONFIG } from '../lib/constants'
+import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG } from '../lib/constants'
+
+function StatusIcon({ status }) {
+  if (status === 'completed') return <CheckCircle2 className="w-[22px] h-[22px] fill-green-50 text-green-500" />
+  if (status === 'in_progress') return <Clock className="w-[22px] h-[22px] text-amber-400" />
+  return <Circle className="w-[22px] h-[22px] text-gray-300 hover:text-amber-400" />
+}
 
 function TaskItem({ task, profiles, onEdit }) {
   const profile = profiles.find(p => p.id === task.responsable_id)
+  const status = task.status ?? (task.completed ? 'completed' : 'pending')
+  const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending
   const priorityCfg = PRIORITY_CONFIG[task.prioridad] || PRIORITY_CONFIG.medium
 
-  const isOverdue = (() => {
-    if (!task.fecha_limite || task.completed) return false
-    return new Date(task.fecha_limite) < new Date()
-  })()
+  const isOverdue = task.fecha_limite && status !== 'completed'
+    ? new Date(task.fecha_limite) < new Date()
+    : false
 
-  const handleToggle = async () => {
+  const handleCycleStatus = async () => {
+    const next = statusCfg.next
     try {
       await updateDoc(doc(db, 'checklist_tasks', task.id), {
-        completed: !task.completed,
+        status: next,
+        completed: next === 'completed',
         actualizado_en: new Date().toISOString(),
       })
-    } catch (error) {
-      console.error('Error toggling task:', error)
+    } catch (err) {
+      console.error('Error updating status:', err)
     }
   }
 
@@ -28,8 +37,8 @@ function TaskItem({ task, profiles, onEdit }) {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
         await deleteDoc(doc(db, 'checklist_tasks', task.id))
-      } catch (error) {
-        console.error('Error deleting task:', error)
+      } catch (err) {
+        console.error('Error deleting task:', err)
       }
     }
   }
@@ -37,7 +46,7 @@ function TaskItem({ task, profiles, onEdit }) {
   const badgeStyle = ROLE_BADGE_STYLES[task.responsable_rol] || 'bg-gray-50 text-gray-700 border-gray-200'
 
   return (
-    <div className={`flex items-start justify-between p-4 bg-white hover:bg-gray-50 transition-all duration-200 group border-b border-gray-100 last:border-b-0 ${task.completed ? 'opacity-60 grayscale-[0.3]' : ''}`}>
+    <div className={`flex items-start justify-between p-4 bg-white hover:bg-gray-50 transition-all duration-200 group border-b border-gray-100 last:border-b-0 ${statusCfg.rowOpacity}`}>
       <div className="flex items-start flex-1 min-w-0 pr-4">
 
         {/* Priority dot */}
@@ -46,24 +55,28 @@ function TaskItem({ task, profiles, onEdit }) {
           title={`${priorityCfg.label} priority`}
         />
 
-        {/* Checkbox */}
+        {/* Status toggle button — cycles pending → in_progress → completed */}
         <button
-          onClick={handleToggle}
-          className={`flex-shrink-0 mt-0.5 rounded-full transition-transform hover:scale-110 active:scale-95 ${task.completed ? 'text-green-500 shadow-sm' : 'text-gray-300 hover:text-brand-primary'}`}
-          aria-label={task.completed ? 'Mark as pending' : 'Mark as complete'}
+          onClick={handleCycleStatus}
+          className="flex-shrink-0 mt-0.5 rounded-full transition-transform hover:scale-110 active:scale-95"
+          aria-label={`Status: ${statusCfg.label}. Click to set ${STATUS_CONFIG[statusCfg.next].label}`}
+          title={`Click to mark as ${STATUS_CONFIG[statusCfg.next].label}`}
         >
-          {task.completed ? (
-            <CheckCircle2 className="w-[22px] h-[22px] fill-green-50" />
-          ) : (
-            <Circle className="w-[22px] h-[22px]" />
-          )}
+          <StatusIcon status={status} />
         </button>
 
         {/* Content */}
         <div className="ml-3 flex-1 min-w-0">
-          <p className={`text-sm font-medium transition-colors ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-            {task.titulo}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className={`text-sm font-medium transition-colors ${status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+              {task.titulo}
+            </p>
+            {status === 'in_progress' && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wide">
+                In Progress
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center mt-2 space-x-2 text-xs text-gray-500 flex-wrap gap-y-1.5">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeStyle}`}>
@@ -89,7 +102,7 @@ function TaskItem({ task, profiles, onEdit }) {
         </div>
       </div>
 
-      {/* Actions — always visible on mobile, hover on desktop */}
+      {/* Actions */}
       <div className="flex items-center space-x-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => onEdit(task)}

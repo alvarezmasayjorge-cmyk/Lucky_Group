@@ -14,7 +14,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
   const [seccionId, setSeccionId] = useState('')
   const [responsableRol, setResponsableRol] = useState('')
   const [responsableId, setResponsableId] = useState('')
-  const [completed, setCompleted] = useState(false)
+  const [status, setStatus] = useState('pending')
   const [prioridad, setPrioridad] = useState('medium')
   const [fechaLimite, setFechaLimite] = useState('')
 
@@ -31,14 +31,14 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
       
       setResponsableRol(task.responsable_rol || '')
       setResponsableId(task.responsable_id || '')
-      setCompleted(task.completed || false)
+      setStatus(task.status ?? (task.completed ? 'completed' : 'pending'))
       setPrioridad(task.prioridad || 'medium')
       setFechaLimite(task.fecha_limite ? task.fecha_limite.split('T')[0] : '')
     } else {
       setArea(currentActiveArea || 'meta_ads')
       const initialSections = secciones.filter(s => s.area === (currentActiveArea || 'meta_ads'))
       setSeccionId(initialSections.length > 0 ? initialSections[0].id : '')
-      setCompleted(false)
+      setStatus('pending')
     }
   }, [task, secciones, currentActiveArea])
 
@@ -60,7 +60,8 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
       seccion_id: seccionId,
       responsable_rol: responsableRol || null,
       responsable_id: responsableId || null,
-      completed,
+      status,
+      completed: status === 'completed',
       prioridad,
       fecha_limite: fechaLimite || null,
       actualizado_en: new Date().toISOString()
@@ -183,12 +184,13 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
                 <select
                   required
-                  value={completed.toString()}
-                  onChange={(e) => setCompleted(e.target.value === 'true')}
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all bg-white shadow-sm font-medium text-gray-700"
                 >
-                  <option value="false">Pending</option>
-                  <option value="true">Completed</option>
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
                 </select>
               </div>
 

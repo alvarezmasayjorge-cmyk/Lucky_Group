@@ -27,3 +27,30 @@ export const PRIORITY_CONFIG = {
   medium: { label: 'Medium', color: 'bg-amber-400', text: 'text-amber-600' },
   low: { label: 'Low', color: 'bg-gray-300', text: 'text-gray-500' },
 }
+
+export const STATUS = {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  completed: 'completed',
+}
+
+export const STATUS_CONFIG = {
+  pending: {
+    label: 'Pending',
+    next: 'in_progress',
+    iconColor: 'text-gray-300 hover:text-amber-400',
+    rowOpacity: '',
+  },
+  in_progress: {
+    label: 'In Progress',
+    next: 'completed',
+    iconColor: 'text-amber-400',
+    rowOpacity: '',
+  },
+  completed: {
+    label: 'Completed',
+    next: 'pending',
+    iconColor: 'text-green-500',
+    rowOpacity: 'opacity-50 grayscale-[0.3]',
+  },
+}
