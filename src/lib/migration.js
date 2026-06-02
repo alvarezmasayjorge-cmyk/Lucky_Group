@@ -50,7 +50,11 @@ const PATCH_V1 = {
   'MESA': [
     { titulo: 'Create New Landing Page (@Julius)',              sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
     { titulo: 'Set Up New Pixel (@Julius)',                     sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
-    { titulo: '[In Progress] Create Doctor Video — Long (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    {
+      titulo: '[In Progress] Create Doctor Video — Long (@Jorge)',
+      renameFrom: 'Create Doctor Video — Long (@Jorge)',
+      sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false,
+    },
     { titulo: 'Create Doctor Video — Short (@Jorge)',           sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
     { titulo: 'Create Short Videos (new offer) (@Jorge)',       sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
     { titulo: 'Create UGC Videos (new offer) (@Jorge)',         sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
@@ -67,7 +71,7 @@ const PATCH_V1 = {
 }
 
 export const runPatchV1 = async (userId) => {
-  const patchRef = doc(db, 'patches', 'v1_missing_tasks')
+  const patchRef = doc(db, 'patches', 'v1_missing_tasks_r2')
   const patchSnap = await getDoc(patchRef)
   if (patchSnap.exists()) return // already applied
 
@@ -88,17 +92,40 @@ export const runPatchV1 = async (userId) => {
   const now = new Date().toISOString()
   let count = 0
 
+  // Build a map of clientId|titulo → docId for rename lookups
+  const existingDocMap = {}
+  tasksSnap.docs.forEach(d => {
+    existingDocMap[`${d.data().client_id}|${d.data().titulo}`] = d.id
+  })
+
   for (const client of clients) {
     const patchList = PATCH_V1[client.name]
     if (!patchList) continue
 
     for (const task of patchList) {
-      const key = `${client.id}|${task.titulo}`
-      if (existingKeys.has(key)) continue // already exists
+      const finalKey = `${client.id}|${task.titulo}`
+
+      // If the target title already exists, skip
+      if (existingKeys.has(finalKey)) continue
 
       const section = sections.find(s => s.nombre === task.sectionName)
       if (!section) { console.warn(`Section not found: ${task.sectionName}`); continue }
 
+      // If renameFrom exists and the old title is present, update it instead of creating
+      if (task.renameFrom) {
+        const oldKey = `${client.id}|${task.renameFrom}`
+        const oldDocId = existingDocMap[oldKey]
+        if (oldDocId) {
+          batch.update(doc(db, 'checklist_tasks', oldDocId), {
+            titulo: task.titulo,
+            actualizado_en: now,
+          })
+          count++
+          continue
+        }
+      }
+
+      // Create new task
       const taskRef = doc(collection(db, 'checklist_tasks'))
       batch.set(taskRef, {
         titulo: task.titulo,
