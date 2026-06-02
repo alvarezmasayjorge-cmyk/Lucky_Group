@@ -67,6 +67,7 @@ function TaskItem({ task, profiles, onEdit }) {
 
         {/* Content */}
         <div className="ml-3 flex-1 min-w-0">
+          {/* Title row */}
           <div className="flex items-center gap-2 flex-wrap">
             <p className={`text-sm font-medium transition-colors ${status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800'}`}>
               {task.titulo}
@@ -78,22 +79,27 @@ function TaskItem({ task, profiles, onEdit }) {
             )}
           </div>
 
-          <div className="flex items-center mt-2 space-x-2 text-xs text-gray-500 flex-wrap gap-y-1.5">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeStyle}`}>
-              {task.responsable_rol || 'Unassigned'}
-            </span>
-
-            {profile?.nombre_completo && (
-              <span className="flex items-center bg-gray-50 rounded-full pr-2.5 border border-gray-100 shadow-sm">
-                <span className="w-5 h-5 rounded-full bg-brand-primary text-white flex items-center justify-center text-[10px] font-bold mr-1.5">
+          {/* Meta row — owner always visible */}
+          <div className="flex items-center mt-1.5 gap-2 flex-wrap">
+            {/* Assignee: show profile name if set, otherwise role badge */}
+            {profile?.nombre_completo ? (
+              <span className="flex items-center gap-1.5 bg-gray-50 rounded-full pl-1 pr-2.5 py-0.5 border border-gray-200 shadow-sm">
+                <span className="w-5 h-5 rounded-full bg-brand-primary text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                   {profile.nombre_completo.charAt(0)}
                 </span>
-                <span className="font-medium text-gray-600 truncate max-w-[100px]">{profile.nombre_completo}</span>
+                <span className="text-xs font-semibold text-gray-700 truncate max-w-[120px]">{profile.nombre_completo}</span>
+                {task.responsable_rol && (
+                  <span className="text-[10px] text-gray-400">· {task.responsable_rol}</span>
+                )}
+              </span>
+            ) : (
+              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeStyle}`}>
+                {task.responsable_rol || 'Unassigned'}
               </span>
             )}
 
             {task.fecha_limite && (
-              <span className={`flex items-center gap-1 font-medium ${isOverdue ? 'text-red-500' : 'text-gray-400'}`}>
+              <span className={`flex items-center gap-1 text-xs font-medium ${isOverdue ? 'text-red-500' : 'text-gray-400'}`}>
                 {isOverdue && <AlertCircle className="w-3 h-3" />}
                 {task.fecha_limite.split('T')[0]}
               </span>
