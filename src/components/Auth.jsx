@@ -42,11 +42,11 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-light p-4">
+    <div className="min-h-screen flex items-center justify-center bg-brand-light p-4 font-sans">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-brand-dark mb-2">Lucky Consultation Group</h1>
-          <p className="text-gray-500">Gestor de Tareas en Equipo</p>
+          <p className="text-gray-500">Team Task Manager</p>
         </div>
 
         {error && <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4 text-sm">{error}</div>}
@@ -74,29 +74,29 @@ export default function Auth() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          Acceder con Google
+          Sign in with Google
         </button>
 
         <div className="relative flex items-center py-2 mb-4">
           <div className="flex-grow border-t border-gray-300"></div>
-          <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">O usa tu correo</span>
+          <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">Or use your email</span>
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
 
         <form onSubmit={handleEmailAuth} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
             <input
               type="email"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
+              placeholder="you@email.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
               type="password"
               required
@@ -111,7 +111,7 @@ export default function Auth() {
             disabled={loading}
             className="w-full bg-brand-primary text-white py-2 px-4 rounded-md hover:bg-brand-dark transition disabled:opacity-50"
           >
-            {loading ? 'Cargando...' : isLogin ? 'Iniciar Sesión con Correo' : 'Registrarse con Correo'}
+            {loading ? 'Loading...' : isLogin ? 'Sign In with Email' : 'Sign Up with Email'}
           </button>
         </form>
 
@@ -120,7 +120,7 @@ export default function Auth() {
             onClick={() => setIsLogin(!isLogin)}
             className="text-sm text-brand-primary hover:underline"
           >
-            {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+            {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
           </button>
         </div>
       </div>

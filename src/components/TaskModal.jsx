@@ -3,19 +3,19 @@ import { db } from '../lib/firebase'
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore'
 import { X } from 'lucide-react'
 
-const ROLES = ['Cliente', 'Media Buyer', 'Funneler', 'Editor de Video', 'Diseñador Gráfico']
+const ROLES = ['Client', 'Media Buyer', 'Funneler', 'Video Editor', 'Graphic Designer']
 
-export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentSeccionId }) {
+export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile }) {
   const [loading, setLoading] = useState(false)
   
   // States for form fields
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
-  const [seccionId, setSeccionId] = useState(currentSeccionId || secciones[0]?.id || '')
+  const [seccionId, setSeccionId] = useState(secciones[0]?.id || '')
   const [responsableRol, setResponsableRol] = useState('')
   const [responsableId, setResponsableId] = useState('')
-  const [estado, setEstado] = useState('pendiente')
-  const [prioridad, setPrioridad] = useState('media')
+  const [completed, setCompleted] = useState(false)
+  const [prioridad, setPrioridad] = useState('medium')
   const [fechaLimite, setFechaLimite] = useState('')
 
   useEffect(() => {
@@ -25,13 +25,14 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
       setSeccionId(task.seccion_id || '')
       setResponsableRol(task.responsable_rol || '')
       setResponsableId(task.responsable_id || '')
-      setEstado(task.estado || 'pendiente')
-      setPrioridad(task.prioridad || 'media')
+      setCompleted(task.completed || false)
+      setPrioridad(task.prioridad || 'medium')
       setFechaLimite(task.fecha_limite ? task.fecha_limite.split('T')[0] : '')
     } else {
-      setSeccionId(currentSeccionId || secciones[0]?.id || '')
+      setSeccionId(secciones[0]?.id || '')
+      setCompleted(false)
     }
-  }, [task, currentSeccionId, secciones])
+  }, [task, secciones])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -43,7 +44,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
       seccion_id: seccionId,
       responsable_rol: responsableRol || null,
       responsable_id: responsableId || null,
-      estado,
+      completed,
       prioridad,
       fecha_limite: fechaLimite || null,
       actualizado_en: new Date().toISOString()
@@ -52,18 +53,18 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
     try {
       if (task) {
         // Update
-        const taskRef = doc(db, 'tareas', task.id)
+        const taskRef = doc(db, 'checklist_tasks', task.id)
         await updateDoc(taskRef, payload)
       } else {
         // Insert
         payload.creado_por = profile.id
         payload.creado_en = new Date().toISOString()
-        await addDoc(collection(db, 'tareas'), payload)
+        await addDoc(collection(db, 'checklist_tasks'), payload)
       }
       onClose()
     } catch (error) {
       console.error('Error saving task:', error.message)
-      alert('Hubo un error al guardar la tarea.')
+      alert('There was an error saving the task.')
     } finally {
       setLoading(false)
     }
@@ -78,7 +79,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">
-            {task ? 'Editar Tarea' : 'Nueva Tarea'}
+            {task ? 'Edit Task' : 'New Task'}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
             <X className="w-6 h-6" />
@@ -89,38 +90,38 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
         <div className="p-6 overflow-y-auto flex-1">
           <form id="task-form" onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Título de la tarea *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Task Title *</label>
               <input
                 type="text"
                 required
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
-                placeholder="Ej. Revisar copys para campaña"
+                placeholder="e.g. Create landing page"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
               <textarea
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
-                placeholder="Detalles adicionales..."
+                placeholder="Additional details..."
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sección *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Section *</label>
                 <select
                   required
                   value={seccionId}
                   onChange={(e) => setSeccionId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none bg-white"
                 >
-                  <option value="" disabled>Selecciona una sección...</option>
+                  <option value="" disabled>Select a section...</option>
                   {secciones.map(s => (
                     <option key={s.id} value={s.id}>{s.nombre}</option>
                   ))}
@@ -128,27 +129,26 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   required
-                  value={estado}
-                  onChange={(e) => setEstado(e.target.value)}
+                  value={completed.toString()}
+                  onChange={(e) => setCompleted(e.target.value === 'true')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none bg-white"
                 >
-                  <option value="pendiente">Pendiente</option>
-                  <option value="en_curso">En Curso</option>
-                  <option value="hecho">Hecho</option>
+                  <option value="false">Pending</option>
+                  <option value="true">Completed</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rol Responsable</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Responsible Role</label>
                 <select
                   value={responsableRol}
                   onChange={(e) => setResponsableRol(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none bg-white"
                 >
-                  <option value="">Cualquier rol</option>
+                  <option value="">Any role</option>
                   {ROLES.map(r => (
                     <option key={r} value={r}>{r}</option>
                   ))}
@@ -156,13 +156,13 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Persona Asignada</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Person</label>
                 <select
                   value={responsableId}
                   onChange={(e) => setResponsableId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none bg-white"
                 >
-                  <option value="">Sin asignar</option>
+                  <option value="">Unassigned</option>
                   {profiles.map(p => (
                     <option key={p.id} value={p.id}>{p.nombre_completo} ({p.rol_equipo})</option>
                   ))}
@@ -170,21 +170,21 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prioridad *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
                 <select
                   required
                   value={prioridad}
                   onChange={(e) => setPrioridad(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary outline-none bg-white"
                 >
-                  <option value="baja">Baja</option>
-                  <option value="media">Media</option>
-                  <option value="alta">Alta</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Límite</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                 <input
                   type="date"
                   value={fechaLimite}
@@ -203,7 +203,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
             onClick={onClose}
             className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
           >
-            Cancelar
+            Cancel
           </button>
           <button
             type="submit"
@@ -211,7 +211,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
             disabled={loading}
             className="px-4 py-2 text-white bg-brand-primary rounded-md hover:bg-brand-dark transition disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : 'Guardar Tarea'}
+            {loading ? 'Saving...' : 'Save Task'}
           </button>
         </div>
 

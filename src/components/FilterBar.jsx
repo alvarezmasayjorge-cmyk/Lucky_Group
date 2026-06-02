@@ -1,6 +1,6 @@
 import { Filter } from 'lucide-react'
 
-const ROLES = ['Cliente', 'Media Buyer', 'Funneler', 'Editor de Video', 'Diseñador Gráfico']
+const ROLES = ['Client', 'Media Buyer', 'Funneler', 'Video Editor', 'Graphic Designer']
 
 export default function FilterBar({ 
   secciones, 
@@ -16,7 +16,7 @@ export default function FilterBar({
     <div className="flex flex-wrap items-center gap-3">
       <div className="flex items-center text-gray-500 mr-2">
         <Filter className="w-5 h-5 mr-1" />
-        <span className="text-sm font-medium hidden sm:inline">Filtros:</span>
+        <span className="text-sm font-medium hidden sm:inline">Filters:</span>
       </div>
 
       <select
@@ -24,7 +24,7 @@ export default function FilterBar({
         onChange={(e) => setSelectedSeccion(e.target.value)}
         className="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-primary outline-none bg-white text-gray-700 min-w-[140px]"
       >
-        <option value="all">Todas las secciones</option>
+        <option value="all">All sections</option>
         {secciones.map(s => (
           <option key={s.id} value={s.id}>{s.nombre}</option>
         ))}
@@ -35,7 +35,7 @@ export default function FilterBar({
         onChange={(e) => setSelectedRol(e.target.value)}
         className="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-primary outline-none bg-white text-gray-700 min-w-[140px]"
       >
-        <option value="all">Todos los roles</option>
+        <option value="all">All roles</option>
         {ROLES.map(r => (
           <option key={r} value={r}>{r}</option>
         ))}
@@ -46,7 +46,7 @@ export default function FilterBar({
         onChange={(e) => setSelectedResponsable(e.target.value)}
         className="text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-primary outline-none bg-white text-gray-700 min-w-[140px]"
       >
-        <option value="all">Cualquier persona</option>
+        <option value="all">Anyone</option>
         {profiles.map(p => (
           <option key={p.id} value={p.id}>{p.nombre_completo}</option>
         ))}

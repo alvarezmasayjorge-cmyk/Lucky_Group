@@ -3,11 +3,11 @@ import { db } from '../lib/firebase'
 import { doc, setDoc } from 'firebase/firestore'
 
 const ROLES = [
-  'Cliente',
+  'Client',
   'Media Buyer',
   'Funneler',
-  'Editor de Video',
-  'Diseñador Gráfico'
+  'Video Editor',
+  'Graphic Designer'
 ]
 
 export default function ProfileSetup({ user, onProfileUpdated }) {
@@ -39,34 +39,34 @@ export default function ProfileSetup({ user, onProfileUpdated }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-light p-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold text-brand-dark mb-6 text-center">Completa tu Perfil</h2>
+        <h2 className="text-2xl font-bold text-brand-dark mb-6 text-center">Complete your Profile</h2>
         <p className="text-gray-600 text-sm mb-6 text-center">
-          Para colaborar en el equipo de Lucky Consultation Group, necesitamos saber quién eres.
+          To collaborate with the Lucky Consultation Group team, we need to know who you are.
         </p>
 
         {error && <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4 text-sm">{error}</div>}
 
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input
               type="text"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ej. Juan Pérez"
+              placeholder="e.g. John Doe"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rol en el Equipo</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Team Role</label>
             <select
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition bg-white"
               value={rol}
               onChange={(e) => setRol(e.target.value)}
             >
-              <option value="" disabled>Selecciona tu rol...</option>
+              <option value="" disabled>Select your role...</option>
               {ROLES.map(r => (
                 <option key={r} value={r}>{r}</option>
               ))}
@@ -77,7 +77,7 @@ export default function ProfileSetup({ user, onProfileUpdated }) {
             disabled={loading}
             className="w-full bg-brand-primary text-white py-2 px-4 rounded-md hover:bg-brand-dark transition disabled:opacity-50 mt-4"
           >
-            {loading ? 'Guardando...' : 'Entrar al Tablero'}
+            {loading ? 'Saving...' : 'Enter Dashboard'}
           </button>
         </form>
       </div>
