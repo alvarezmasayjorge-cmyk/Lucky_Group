@@ -1,6 +1,126 @@
 import { db } from './firebase'
-import { collection, doc, writeBatch, getDocs, query, limit } from 'firebase/firestore'
+import { collection, doc, writeBatch, getDocs, query, limit, setDoc, getDoc } from 'firebase/firestore'
 import { TEMPLATE_SECTIONS, TEMPLATE_TASKS } from './templateTasks'
+
+// Tasks to patch into existing clients (added after initial seeding)
+const PATCH_V1 = {
+  'AGNEW': [
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+  ],
+  'BLOOMFIELD': [
+    { titulo: 'Waiting for Raw Videos', sectionName: '5. VIDEO AD MATERIALS (Client Must Provide)', responsable_rol: 'Client', completed: false },
+  ],
+  'GRASS LAKE': [
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+  ],
+  'DELTA': [
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+  ],
+  'ECKERT': [
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+  ],
+  'MOORE': [
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+  ],
+  'MESA': [
+    { titulo: 'Create New Landing Page (@Julius)',              sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',                     sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+    { titulo: '[In Progress] Create Doctor Video — Long (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',           sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',       sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)',         sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+  ],
+  'PURE SEOUL': [
+    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Client', completed: false },
+  ],
+  'NAPLES IDEAL FITNESS': [
+    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Client', completed: false },
+  ],
+  'AGE REVERSAL TECHNOLOGY CENTER': [
+    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Client', completed: false },
+  ],
+}
+
+export const runPatchV1 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v1_missing_tasks')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return // already applied
+
+  console.log('Running patch v1: adding missing tasks...')
+
+  const [clientsSnap, sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  // Build set of existing "clientId|titulo" to avoid duplicates
+  const existingKeys = new Set(tasksSnap.docs.map(d => `${d.data().client_id}|${d.data().titulo}`))
+
+  const batch = writeBatch(db)
+  const now = new Date().toISOString()
+  let count = 0
+
+  for (const client of clients) {
+    const patchList = PATCH_V1[client.name]
+    if (!patchList) continue
+
+    for (const task of patchList) {
+      const key = `${client.id}|${task.titulo}`
+      if (existingKeys.has(key)) continue // already exists
+
+      const section = sections.find(s => s.nombre === task.sectionName)
+      if (!section) { console.warn(`Section not found: ${task.sectionName}`); continue }
+
+      const taskRef = doc(collection(db, 'checklist_tasks'))
+      batch.set(taskRef, {
+        titulo: task.titulo,
+        responsable_rol: task.responsable_rol,
+        seccion_id: section.id,
+        client_id: client.id,
+        completed: task.completed,
+        prioridad: 'medium',
+        responsable_id: null,
+        creado_por: userId,
+        creado_en: now,
+        actualizado_en: now,
+      })
+      count++
+    }
+  }
+
+  // Mark patch as applied
+  batch.set(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
+  await batch.commit()
+  console.log(`Patch v1 applied: ${count} tasks added.`)
+}
 
 const CLIENT_UPDATES = {
   'AGNEW': {

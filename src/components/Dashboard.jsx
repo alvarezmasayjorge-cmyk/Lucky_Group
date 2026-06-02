@@ -7,7 +7,7 @@ import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -53,6 +53,7 @@ export default function Dashboard({ user, profile }) {
       setError(null)
       try {
         await runInitialMigrationAndSeed(user.uid)
+        await runPatchV1(user.uid)
 
         const qSecciones = query(collection(db, 'checklist_sections'), orderBy('orden'))
         const secSnap = await getDocs(qSecciones)
