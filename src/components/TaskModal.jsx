@@ -1,15 +1,8 @@
 import { useState, useEffect } from 'react'
 import { db } from '../lib/firebase'
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore'
-import { X, LayoutTemplate, Megaphone, Search, Target } from 'lucide-react'
-
-const ROLES = ['Client', 'Media Buyer', 'Funneler', 'Video Editor', 'Graphic Designer']
-
-const AREAS = [
-  { id: 'meta_ads', name: 'Meta Ads', icon: <Megaphone className="w-4 h-4 mr-2" /> },
-  { id: 'google_ads', name: 'Google Ads', icon: <Search className="w-4 h-4 mr-2" /> },
-  { id: 'ghl', name: 'Go High Level', icon: <Target className="w-4 h-4 mr-2" /> }
-]
+import { X, LayoutTemplate } from 'lucide-react'
+import { ROLES, AREAS } from '../lib/constants'
 
 export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentActiveArea, activeClientId }) {
   const [loading, setLoading] = useState(false)
