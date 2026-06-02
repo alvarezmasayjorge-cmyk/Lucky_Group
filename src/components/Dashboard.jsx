@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -29,6 +29,7 @@ export default function Dashboard({ user, profile }) {
   // Navigation
   const [activeClient, setActiveClient] = useState(null)
   const [activeArea, setActiveArea] = useState('meta_ads')
+  const [activeView, setActiveView] = useState('board') // 'board' | 'team'
 
   // Filters
   const [selectedSeccion, setSelectedSeccion] = useState('all')
@@ -40,8 +41,17 @@ export default function Dashboard({ user, profile }) {
   // Collapsed sections
   const [collapsedSections, setCollapsedSections] = useState({})
 
+  // true = expanded, undefined/false = collapsed (default closed)
   const toggleSection = useCallback((sectionId) => {
     setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))
+  }, [])
+
+  const expandAll = useCallback(() => {
+    setCollapsedSections(prev => {
+      const next = {}
+      Object.keys(prev).forEach(k => { next[k] = true })
+      return next
+    })
   }, [])
 
   // Modal
@@ -53,6 +63,7 @@ export default function Dashboard({ user, profile }) {
     setSelectedSeccion('all')
     setSearchQuery('')
     setCollapsedSections({})
+    if (!activeClient) setActiveView('board')
   }, [activeArea, activeClient])
 
   useEffect(() => {
@@ -364,15 +375,16 @@ export default function Dashboard({ user, profile }) {
 
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* Area Navigation */}
-        <div className="mb-8 flex justify-center">
-          <div className="bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200 inline-flex space-x-1">
+        {/* Navigation tabs */}
+        <div className="mb-8 flex flex-col sm:flex-row justify-center items-center gap-3">
+          {/* Area tabs */}
+          <div className={`bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200 inline-flex space-x-1 ${activeView === 'team' ? 'opacity-40 pointer-events-none' : ''}`}>
             {AREAS_WITH_ICONS.map(area => (
               <button
                 key={area.id}
-                onClick={() => setActiveArea(area.id)}
+                onClick={() => { setActiveArea(area.id); setActiveView('board') }}
                 className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${
-                  activeArea === area.id
+                  activeView === 'board' && activeArea === area.id
                     ? `bg-gradient-to-r ${area.color} text-white shadow-md scale-[1.02]`
                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                 }`}
@@ -382,7 +394,107 @@ export default function Dashboard({ user, profile }) {
               </button>
             ))}
           </div>
+
+          {/* Team view toggle */}
+          <button
+            onClick={() => setActiveView(v => v === 'team' ? 'board' : 'team')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold border transition-all shadow-sm ${
+              activeView === 'team'
+                ? 'bg-gray-900 text-white border-gray-900 shadow-md'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Team View
+          </button>
         </div>
+
+        {/* ── TEAM VIEW ── */}
+        {activeView === 'team' && (() => {
+          const ROLES_ORDER = ['Media Buyer', 'Funneler', 'Video Editor', 'Graphic Designer', 'Client']
+          const inProgressAll = clientTareas.filter(t => getTaskStatus(t) === 'in_progress')
+          const pendingAll    = clientTareas.filter(t => getTaskStatus(t) === 'pending')
+
+          return (
+            <div className="pb-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {ROLES_ORDER.map(role => {
+                  const inProg  = inProgressAll.filter(t => t.responsable_rol === role)
+                  const pending = pendingAll.filter(t => t.responsable_rol === role)
+                  if (inProg.length === 0 && pending.length === 0) return null
+
+                  return (
+                    <div key={role} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                      <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <span className="font-bold text-gray-900">{role}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {inProg.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                              {inProg.length} in progress
+                            </span>
+                          )}
+                          {pending.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500">
+                              {pending.length} pending
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="divide-y divide-gray-100">
+                        {inProg.map(t => {
+                          const sec = secciones.find(s => s.id === t.seccion_id)
+                          const area = AREAS.find(a => a.id === sec?.area)
+                          return (
+                            <div key={t.id} className="px-5 py-3 flex items-start gap-3 bg-amber-50/40">
+                              <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-800 leading-snug">{t.titulo}</p>
+                                {area && (
+                                  <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                        {pending.map(t => {
+                          const sec = secciones.find(s => s.id === t.seccion_id)
+                          const area = AREAS.find(a => a.id === sec?.area)
+                          return (
+                            <div key={t.id} className="px-5 py-3 flex items-start gap-3">
+                              <div className="w-4 h-4 flex-shrink-0 mt-0.5 flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-gray-300" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm text-gray-600 leading-snug">{t.titulo}</p>
+                                {area && (
+                                  <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {inProgressAll.length === 0 && pendingAll.length === 0 && (
+                  <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+                    <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-3" />
+                    <p className="font-bold text-gray-900">All tasks completed!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── BOARD VIEW ── */}
+        {activeView === 'board' && <>
 
         {/* Filters + Add Task */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
@@ -471,11 +583,11 @@ export default function Dashboard({ user, profile }) {
                         </div>
                       )}
                       <ChevronDown
-                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${collapsedSections[seccion.id] ? '-rotate-90' : ''}`}
+                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${collapsedSections[seccion.id] ? '' : '-rotate-90'}`}
                       />
                     </div>
                   </div>
-                  {secTotal > 0 && !collapsedSections[seccion.id] && (
+                  {secTotal > 0 && collapsedSections[seccion.id] && (
                     <div className="w-full bg-gray-100 h-1.5 mt-4 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all duration-700 ${secProgress === 100 ? 'bg-green-500' : 'bg-brand-primary'}`}
@@ -485,7 +597,7 @@ export default function Dashboard({ user, profile }) {
                   )}
                 </button>
 
-                {!collapsedSections[seccion.id] && (
+                {collapsedSections[seccion.id] && (
                   <div className="divide-y divide-gray-100/80 bg-white">
                     {secTasks.length > 0 ? (
                       secTasks.map(task => (
@@ -521,6 +633,7 @@ export default function Dashboard({ user, profile }) {
             </div>
           )}
         </div>
+        </> /* end board view */}
       </main>
 
       {isModalOpen && (
