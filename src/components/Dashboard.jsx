@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3 } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -37,6 +37,13 @@ export default function Dashboard({ user, profile }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [hideCompleted, setHideCompleted] = useState(false)
 
+  // Collapsed sections
+  const [collapsedSections, setCollapsedSections] = useState({})
+
+  const toggleSection = useCallback((sectionId) => {
+    setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))
+  }, [])
+
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
@@ -45,6 +52,7 @@ export default function Dashboard({ user, profile }) {
   useEffect(() => {
     setSelectedSeccion('all')
     setSearchQuery('')
+    setCollapsedSections({})
   }, [activeArea, activeClient])
 
   useEffect(() => {
@@ -123,12 +131,14 @@ export default function Dashboard({ user, profile }) {
   // --- DERIVED DATA ---
 
   // Per-client task stats for master view (memoized)
+  const getTaskStatus = (t) => t.status ?? (t.completed ? 'completed' : 'pending')
+
   const clientStats = useMemo(() => {
     const map = {}
     for (const t of allTareas) {
       if (!map[t.client_id]) map[t.client_id] = { total: 0, completed: 0 }
       map[t.client_id].total++
-      if (t.completed) map[t.client_id].completed++
+      if (getTaskStatus(t) === 'completed') map[t.client_id].completed++
     }
     return map
   }, [allTareas])
@@ -152,7 +162,7 @@ export default function Dashboard({ user, profile }) {
       if (selectedSeccion !== 'all' && t.seccion_id !== selectedSeccion) return false
       if (selectedRol !== 'all' && t.responsable_rol !== selectedRol) return false
       if (selectedResponsable !== 'all' && t.responsable_id !== selectedResponsable) return false
-      if (hideCompleted && t.completed) return false
+      if (hideCompleted && getTaskStatus(t) === 'completed') return false
       if (lowerSearch && !t.titulo.toLowerCase().includes(lowerSearch)) return false
       return true
     })
@@ -164,7 +174,7 @@ export default function Dashboard({ user, profile }) {
   )
 
   const totalTasks = filteredTareas.length
-  const completedTasks = filteredTareas.filter(t => t.completed).length
+  const completedTasks = filteredTareas.filter(t => getTaskStatus(t) === 'completed').length
   const progressPercent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100)
   const activeAreaObj = AREAS_WITH_ICONS.find(a => a.id === activeArea) || AREAS_WITH_ICONS[0]
 
@@ -434,13 +444,17 @@ export default function Dashboard({ user, profile }) {
               const s = secciones.find(sx => sx.id === t.seccion_id)
               return s?.id === seccion.id
             })
-            const secCompleted = rawSecTasks.filter(t => t.completed).length
+            const secCompleted = rawSecTasks.filter(t => getTaskStatus(t) === 'completed').length
             const secTotal = rawSecTasks.length
             const secProgress = secTotal === 0 ? 0 : Math.round((secCompleted / secTotal) * 100)
 
             return (
               <div key={seccion.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                <div className="bg-gray-50/50 px-6 py-5 border-b border-gray-100 relative overflow-hidden group">
+                {/* Section Header — clickeable para contraer/expandir */}
+                <button
+                  onClick={() => toggleSection(seccion.id)}
+                  className="w-full text-left bg-gray-50/50 px-6 py-5 border-b border-gray-100 relative overflow-hidden group"
+                >
                   <div className="absolute left-0 top-0 w-1 h-full bg-gray-300 group-hover:bg-brand-primary transition-colors" />
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -449,14 +463,19 @@ export default function Dashboard({ user, profile }) {
                       </div>
                       <h3 className="font-bold text-gray-900 text-lg leading-tight">{seccion.nombre}</h3>
                     </div>
-                    {secTotal > 0 && (
-                      <div className="flex items-center space-x-2 text-sm font-bold bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
-                        <span className={secProgress === 100 ? 'text-green-600' : 'text-gray-600'}>{secCompleted}/{secTotal}</span>
-                        {secProgress === 100 && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {secTotal > 0 && (
+                        <div className="flex items-center space-x-2 text-sm font-bold bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
+                          <span className={secProgress === 100 ? 'text-green-600' : 'text-gray-600'}>{secCompleted}/{secTotal}</span>
+                          {secProgress === 100 && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                        </div>
+                      )}
+                      <ChevronDown
+                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${collapsedSections[seccion.id] ? '-rotate-90' : ''}`}
+                      />
+                    </div>
                   </div>
-                  {secTotal > 0 && (
+                  {secTotal > 0 && !collapsedSections[seccion.id] && (
                     <div className="w-full bg-gray-100 h-1.5 mt-4 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all duration-700 ${secProgress === 100 ? 'bg-green-500' : 'bg-brand-primary'}`}
@@ -464,28 +483,30 @@ export default function Dashboard({ user, profile }) {
                       />
                     </div>
                   )}
-                </div>
+                </button>
 
-                <div className="divide-y divide-gray-100/80 bg-white">
-                  {secTasks.length > 0 ? (
-                    secTasks.map(task => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        profiles={profiles}
-                        onEdit={handleOpenEdit}
-                      />
-                    ))
-                  ) : (
-                    <div className="px-6 py-8 text-center bg-gray-50/30">
-                      <p className="text-sm text-gray-400 font-medium">
-                        {searchQuery || hideCompleted
-                          ? 'No tasks match the current filters.'
-                          : 'No tasks added to this section yet.'}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                {!collapsedSections[seccion.id] && (
+                  <div className="divide-y divide-gray-100/80 bg-white">
+                    {secTasks.length > 0 ? (
+                      secTasks.map(task => (
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          profiles={profiles}
+                          onEdit={handleOpenEdit}
+                        />
+                      ))
+                    ) : (
+                      <div className="px-6 py-8 text-center bg-gray-50/30">
+                        <p className="text-sm text-gray-400 font-medium">
+                          {searchQuery || hideCompleted
+                            ? 'No tasks match the current filters.'
+                            : 'No tasks added to this section yet.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}
