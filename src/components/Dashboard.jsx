@@ -35,6 +35,11 @@ export default function Dashboard({ user, profile }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
 
+  // Ensure selected section filter is reset if switching areas
+  useEffect(() => {
+    setSelectedSeccion('all')
+  }, [activeArea, activeClient])
+
   useEffect(() => {
     fetchStaticData()
 
@@ -216,11 +221,6 @@ export default function Dashboard({ user, profile }) {
   }
 
   // CLIENT VIEW RENDERER (Detailed Board)
-
-  // Ensure selected section filter is reset if switching areas
-  useEffect(() => {
-    setSelectedSeccion('all')
-  }, [activeArea, activeClient])
 
   const areaSections = secciones.filter(s => s.area === activeArea)
   const activeAreaObj = AREAS.find(a => a.id === activeArea) || AREAS[0]
