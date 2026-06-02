@@ -223,7 +223,7 @@ export default function Dashboard({ user, profile }) {
   }, [activeArea, activeClient])
 
   const areaSections = secciones.filter(s => s.area === activeArea)
-  const activeAreaObj = AREAS.find(a => a.id === activeArea)
+  const activeAreaObj = AREAS.find(a => a.id === activeArea) || AREAS[0]
 
   // Filter tasks specifically for this active client
   const clientTareas = allTareas.filter(t => t.client_id === activeClient.id)
@@ -333,10 +333,10 @@ export default function Dashboard({ user, profile }) {
 
         {/* Progress Card */}
         <div className="mb-10 bg-white p-6 rounded-2xl shadow-sm border border-gray-200 relative overflow-hidden">
-          <div className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${activeAreaObj.color}`}></div>
+          <div className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${activeAreaObj?.color || ''}`}></div>
           <div className="flex justify-between items-end mb-4 pl-4">
             <div>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight">{activeAreaObj.name} Progress</h2>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight">{activeAreaObj?.name || 'Area'} Progress</h2>
               <p className="text-sm font-medium text-gray-500 mt-1">{totalTasks} total tasks • {completedTasks} completed</p>
             </div>
             <div className="flex flex-col items-end">
@@ -345,7 +345,7 @@ export default function Dashboard({ user, profile }) {
           </div>
           <div className="w-full bg-gray-100 rounded-full h-4 pl-4 overflow-hidden relative">
             <div 
-              className={`h-4 rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${activeAreaObj.color} relative`}
+              className={`h-4 rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${activeAreaObj?.color || ''} relative`}
               style={{ width: `${progressPercent}%` }}
             >
               <div className="absolute inset-0 bg-white/20 w-full animate-pulse"></div>

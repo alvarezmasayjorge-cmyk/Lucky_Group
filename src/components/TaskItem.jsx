@@ -66,7 +66,7 @@ export default function TaskItem({ task, profiles, onEdit }) {
               {task.responsable_rol || 'Unassigned Role'}
             </span>
             
-            {profile && (
+            {profile && profile.nombre_completo && (
               <span className="flex items-center bg-gray-50 rounded-full pr-2.5 border border-gray-100 shadow-sm">
                 <span className="w-5 h-5 rounded-full bg-brand-primary text-white flex items-center justify-center text-[10px] font-bold mr-1.5 shadow-inner">
                   {profile.nombre_completo.charAt(0)}
