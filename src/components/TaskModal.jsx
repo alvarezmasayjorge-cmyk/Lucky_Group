@@ -11,7 +11,7 @@ const AREAS = [
   { id: 'ghl', name: 'Go High Level', icon: <Target className="w-4 h-4 mr-2" /> }
 ]
 
-export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentActiveArea }) {
+export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentActiveArea, activeClientId }) {
   const [loading, setLoading] = useState(false)
   
   // States for form fields
@@ -82,6 +82,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
         // Insert
         payload.creado_por = profile.id
         payload.creado_en = new Date().toISOString()
+        payload.client_id = activeClientId // Bind task to client
         await addDoc(collection(db, 'checklist_tasks'), payload)
       }
       onClose()
