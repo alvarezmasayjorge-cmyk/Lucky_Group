@@ -417,8 +417,52 @@ export default function Dashboard({ user, profile }) {
         {/* ── TEAM VIEW ── */}
         {activeView === 'team' && (() => {
           const ROLES_ORDER = ['Media Buyer', 'Funneler', 'Video Editor', 'Graphic Designer', 'Client']
-          const inProgressAll = clientTareas.filter(t => getTaskStatus(t) === 'in_progress')
-          const pendingAll    = clientTareas.filter(t => getTaskStatus(t) === 'pending')
+          // Use ALL tasks across all clients
+          const inProgressAll = allTareas.filter(t => getTaskStatus(t) === 'in_progress')
+          const pendingAll    = allTareas.filter(t => getTaskStatus(t) === 'pending')
+
+          const openTask = (task) => {
+            const taskClient = clients.find(c => c.id === task.client_id)
+            if (taskClient) {
+              const sec = secciones.find(s => s.id === task.seccion_id)
+              setActiveClient(taskClient)
+              setActiveArea(sec?.area || 'meta_ads')
+              setActiveView('board')
+              setEditingTask(task)
+              setIsModalOpen(true)
+            }
+          }
+
+          const TaskRow = ({ task, isInProgress }) => {
+            const sec    = secciones.find(s => s.id === task.seccion_id)
+            const area   = AREAS.find(a => a.id === sec?.area)
+            const client = clients.find(c => c.id === task.client_id)
+            return (
+              <button
+                onClick={() => openTask(task)}
+                className={`w-full text-left px-5 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors group ${isInProgress ? 'bg-amber-50/40 hover:bg-amber-50' : ''}`}
+              >
+                {isInProgress
+                  ? <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  : <div className="w-4 h-4 flex-shrink-0 mt-0.5 flex items-center justify-center"><div className="w-2 h-2 rounded-full bg-gray-300" /></div>
+                }
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-medium leading-snug ${isInProgress ? 'text-gray-800' : 'text-gray-600'}`}>{task.titulo}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    {client && (
+                      <span className="text-[11px] font-bold text-brand-primary bg-brand-light px-1.5 py-0.5 rounded">
+                        {client.name}
+                      </span>
+                    )}
+                    {area && (
+                      <span className="text-[11px] text-gray-400">{area.name} · {sec?.nombre}</span>
+                    )}
+                  </div>
+                </div>
+                <ArrowLeft className="w-3.5 h-3.5 text-gray-300 group-hover:text-brand-primary rotate-180 flex-shrink-0 mt-1 transition-colors" />
+              </button>
+            )
+          }
 
           return (
             <div className="pb-12">
@@ -432,7 +476,7 @@ export default function Dashboard({ user, profile }) {
                     <div key={role} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                       <button
                         onClick={() => toggleRole(role)}
-                        className="w-full text-left px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between group hover:bg-gray-100 transition-colors"
+                        className="w-full text-left px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-gray-400" />
@@ -455,38 +499,8 @@ export default function Dashboard({ user, profile }) {
 
                       {collapsedRoles[role] && (
                         <div className="divide-y divide-gray-100">
-                          {inProg.map(t => {
-                            const sec = secciones.find(s => s.id === t.seccion_id)
-                            const area = AREAS.find(a => a.id === sec?.area)
-                            return (
-                              <div key={t.id} className="px-5 py-3 flex items-start gap-3 bg-amber-50/40">
-                                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium text-gray-800 leading-snug">{t.titulo}</p>
-                                  {area && (
-                                    <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
-                          {pending.map(t => {
-                            const sec = secciones.find(s => s.id === t.seccion_id)
-                            const area = AREAS.find(a => a.id === sec?.area)
-                            return (
-                              <div key={t.id} className="px-5 py-3 flex items-start gap-3">
-                                <div className="w-4 h-4 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                                  <div className="w-2 h-2 rounded-full bg-gray-300" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm text-gray-600 leading-snug">{t.titulo}</p>
-                                  {area && (
-                                    <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
+                          {inProg.map(t => <TaskRow key={t.id} task={t} isInProgress />)}
+                          {pending.map(t => <TaskRow key={t.id} task={t} isInProgress={false} />)}
                         </div>
                       )}
                     </div>
@@ -647,7 +661,7 @@ export default function Dashboard({ user, profile }) {
         </> /* end board view */}
       </main>
 
-      {isModalOpen && (
+      {isModalOpen && activeClient && (
         <TaskModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
