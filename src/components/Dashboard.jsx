@@ -7,7 +7,7 @@ import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -38,12 +38,16 @@ export default function Dashboard({ user, profile }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [hideCompleted, setHideCompleted] = useState(false)
 
-  // Collapsed sections
+  // Collapsed sections (board view) — true = expanded, undefined/false = collapsed
   const [collapsedSections, setCollapsedSections] = useState({})
-
-  // true = expanded, undefined/false = collapsed (default closed)
   const toggleSection = useCallback((sectionId) => {
     setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))
+  }, [])
+
+  // Collapsed role cards (team view) — same convention
+  const [collapsedRoles, setCollapsedRoles] = useState({})
+  const toggleRole = useCallback((role) => {
+    setCollapsedRoles(prev => ({ ...prev, [role]: !prev[role] }))
   }, [])
 
   const expandAll = useCallback(() => {
@@ -72,7 +76,8 @@ export default function Dashboard({ user, profile }) {
       setError(null)
       try {
         await runInitialMigrationAndSeed(user.uid)
-        await runPatchV1(user.uid)
+      await runPatchV1(user.uid)
+      await runResetToUserTasks(user.uid)
 
         const qSecciones = query(collection(db, 'checklist_sections'), orderBy('orden'))
         const secSnap = await getDocs(qSecciones)
@@ -425,7 +430,10 @@ export default function Dashboard({ user, profile }) {
 
                   return (
                     <div key={role} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                      <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                      <button
+                        onClick={() => toggleRole(role)}
+                        className="w-full text-left px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between group hover:bg-gray-100 transition-colors"
+                      >
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-gray-400" />
                           <span className="font-bold text-gray-900">{role}</span>
@@ -441,43 +449,46 @@ export default function Dashboard({ user, profile }) {
                               {pending.length} pending
                             </span>
                           )}
+                          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${collapsedRoles[role] ? '' : '-rotate-90'}`} />
                         </div>
-                      </div>
+                      </button>
 
-                      <div className="divide-y divide-gray-100">
-                        {inProg.map(t => {
-                          const sec = secciones.find(s => s.id === t.seccion_id)
-                          const area = AREAS.find(a => a.id === sec?.area)
-                          return (
-                            <div key={t.id} className="px-5 py-3 flex items-start gap-3 bg-amber-50/40">
-                              <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-800 leading-snug">{t.titulo}</p>
-                                {area && (
-                                  <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
-                                )}
+                      {collapsedRoles[role] && (
+                        <div className="divide-y divide-gray-100">
+                          {inProg.map(t => {
+                            const sec = secciones.find(s => s.id === t.seccion_id)
+                            const area = AREAS.find(a => a.id === sec?.area)
+                            return (
+                              <div key={t.id} className="px-5 py-3 flex items-start gap-3 bg-amber-50/40">
+                                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-gray-800 leading-snug">{t.titulo}</p>
+                                  {area && (
+                                    <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })}
-                        {pending.map(t => {
-                          const sec = secciones.find(s => s.id === t.seccion_id)
-                          const area = AREAS.find(a => a.id === sec?.area)
-                          return (
-                            <div key={t.id} className="px-5 py-3 flex items-start gap-3">
-                              <div className="w-4 h-4 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-gray-300" />
+                            )
+                          })}
+                          {pending.map(t => {
+                            const sec = secciones.find(s => s.id === t.seccion_id)
+                            const area = AREAS.find(a => a.id === sec?.area)
+                            return (
+                              <div key={t.id} className="px-5 py-3 flex items-start gap-3">
+                                <div className="w-4 h-4 flex-shrink-0 mt-0.5 flex items-center justify-center">
+                                  <div className="w-2 h-2 rounded-full bg-gray-300" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm text-gray-600 leading-snug">{t.titulo}</p>
+                                  {area && (
+                                    <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
+                                  )}
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm text-gray-600 leading-snug">{t.titulo}</p>
-                                {area && (
-                                  <p className="text-[11px] text-gray-400 mt-0.5">{area.name} · {sec?.nombre}</p>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

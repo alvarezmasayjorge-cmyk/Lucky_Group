@@ -336,6 +336,130 @@ export const runInitialMigrationAndSeed = async (userId) => {
   return true;
 }
 
+// ─── RESET: delete all template tasks, keep only the user-specified ones ───────
+const USER_TASKS = {
+  'AGNEW': [
+    { titulo: 'Create UGC Videos (new offer)',  sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+  ],
+  'BLOOMFIELD': [
+    { titulo: 'Waiting for Raw Videos',          sectionName: '5. VIDEO AD MATERIALS (Client Must Provide)', responsable_rol: 'Client',      status: 'pending',      completed: false },
+  ],
+  'GRASS LAKE': [
+    { titulo: 'Create UGC Videos (new offer)',  sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+  ],
+  'DELTA': [
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+  ],
+  'ECKERT': [
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+  ],
+  'MOORE': [
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+  ],
+  'MESA': [
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'in_progress',  completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+  ],
+  'PURE SEOUL': [
+    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Client',        status: 'pending',      completed: false },
+  ],
+  'NAPLES IDEAL FITNESS': [
+    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Client',        status: 'pending',      completed: false },
+  ],
+  'AGE REVERSAL TECHNOLOGY CENTER': [
+    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Client',        status: 'pending',      completed: false },
+  ],
+}
+
+export const runResetToUserTasks = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v3_reset_to_user_tasks')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  console.log('Running reset: deleting all tasks and re-seeding from user list...')
+
+  const [clientsSnap, sectionsSnap, allTasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const clients  = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  // Delete all existing tasks in chunks of 400
+  const taskDocs = allTasksSnap.docs
+  for (let i = 0; i < taskDocs.length; i += 400) {
+    const b = writeBatch(db)
+    taskDocs.slice(i, i + 400).forEach(d => b.delete(d.ref))
+    await b.commit()
+  }
+
+  // Create only the user-specified tasks
+  const createBatch = writeBatch(db)
+  let count = 0
+
+  for (const client of clients) {
+    const taskList = USER_TASKS[client.name]
+    if (!taskList) continue
+
+    for (const task of taskList) {
+      const section = sections.find(s => s.nombre === task.sectionName)
+      if (!section) { console.warn(`Section not found: ${task.sectionName}`); continue }
+
+      const taskRef = doc(collection(db, 'checklist_tasks'))
+      createBatch.set(taskRef, {
+        titulo: task.titulo,
+        responsable_rol: task.responsable_rol,
+        seccion_id: section.id,
+        client_id: client.id,
+        status: task.status,
+        completed: task.completed,
+        prioridad: 'medium',
+        responsable_id: null,
+        creado_por: userId,
+        creado_en: now,
+        actualizado_en: now,
+      })
+      count++
+    }
+  }
+
+  createBatch.set(patchRef, { applied_at: now, applied_by: userId, tasks_created: count })
+  await createBatch.commit()
+  console.log(`Reset complete: ${count} tasks created.`)
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
