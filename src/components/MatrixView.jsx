@@ -29,7 +29,7 @@ function Cell({ task, isColHL, isRowHL, onHover, onLeave, onClick }) {
   if (!task) {
     return (
       <div
-        style={{ flex: '1 1 0', minWidth: 32, height: 40, background: '#f9fafb', borderBottom: '1px solid #f3f4f6', borderRight: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ flex: '1 1 0', minWidth: 0, height: 40, background: '#f9fafb', borderBottom: '1px solid #f3f4f6', borderRight: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <span style={{ fontSize: 11, color: '#d1d5db', fontWeight: 600 }}>—</span>
       </div>
@@ -53,7 +53,7 @@ function Cell({ task, isColHL, isRowHL, onHover, onLeave, onClick }) {
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
       style={{
-        flex: '1 1 0', minWidth: 32, height: 40,
+        flex: '1 1 0', minWidth: 0, height: 40,
         background: hlBg || bg,
         borderBottom: '1px solid #f3f4f6',
         borderRight: '1px solid #f3f4f6',
@@ -432,7 +432,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
         background: 'white', borderRadius: 16, border: '1px solid #e5e7eb',
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden',
         display: 'grid',
-        gridTemplateColumns: `${PROCESS_COL_W}px 1fr`,
+        gridTemplateColumns: `minmax(160px, 220px) 1fr`,
         gridTemplateRows: `${HEADER_H}px 1fr`,
         height: 'calc(100vh - 220px)',
       }}>
@@ -455,9 +455,9 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           ref={clientsHeaderRef}
           className="matrix-scroll"
           onScroll={handleHeaderScroll}
-          style={{ overflowX: 'auto', overflowY: 'hidden', borderBottom: '2px solid #e5e7eb' }}
+          style={{ overflowX: 'hidden', overflowY: 'hidden', borderBottom: '2px solid #e5e7eb' }}
         >
-          <div style={{ display: 'flex', height: HEADER_H, alignItems: 'stretch', minWidth: clients.length * 32 }}>
+          <div style={{ display: 'flex', height: HEADER_H, alignItems: 'stretch', width: '100%' }}>
             {clients.map(client => {
               const pct = clientProgress[client.id] || 0
               const isHL = highlightCol === client.id
@@ -467,7 +467,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                   onClick={() => setHighlightCol(isHL ? null : client.id)}
                   title={client.name}
                   style={{
-                    flex: '1 1 0', minWidth: 32, height: HEADER_H,
+                    flex: '1 1 0', minWidth: 0, height: HEADER_H,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
                     paddingBottom: 8, borderRight: '1px solid #e5e7eb',
                     cursor: 'pointer', position: 'relative',
@@ -488,7 +488,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                   <span style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', marginBottom: 4 }}>
                     {pct}%
                   </span>
-                  <div style={{ width: 36, height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ width: '80%', maxWidth: 36, height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
                     <div style={{
                       height: '100%', background: '#2E7D32', borderRadius: 2,
                       width: progressLoaded ? `${pct}%` : 0,
@@ -571,9 +571,9 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           className="matrix-scroll"
           onScroll={handleCellsScroll}
           onMouseLeave={() => setTooltip(null)}
-          style={{ overflowX: 'auto', overflowY: 'auto' }}
+          style={{ overflowX: 'hidden', overflowY: 'auto' }}
         >
-          <div style={{ minWidth: clients.length * 32 }}>
+          <div style={{ width: '100%' }}>
             {visibleSections.map(sec => {
               const isOpen = collapsed[sec.id] !== true
               const tasks = sectionTasks[sec.id] || []
@@ -582,7 +582,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                   {/* Section header placeholder row */}
                   <div style={{ display: 'flex', height: SECTION_H, background: '#1e3a5f' }}>
                     {clients.map(client => (
-                      <div key={client.id} style={{ flex: '1 1 0', minWidth: 32, borderRight: '1px solid #16304f' }} />
+                      <div key={client.id} style={{ flex: '1 1 0', minWidth: 0, borderRight: '1px solid #16304f' }} />
                     ))}
                   </div>
 
