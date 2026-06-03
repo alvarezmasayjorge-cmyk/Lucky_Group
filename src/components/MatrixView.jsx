@@ -198,8 +198,69 @@ function TaskDrawer({ item, onClose, onOpenClient }) {
             </div>
           </div>
 
+          {/* Description */}
+          {item.task.descripcion && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Description
+              </label>
+              <div style={{ fontSize: 13, color: '#374151', fontWeight: 400, lineHeight: 1.5 }}>
+                {item.task.descripcion}
+              </div>
+            </div>
+          )}
+
+          {/* Responsible Role */}
+          {item.task.responsable_rol && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Assigned Role
+              </label>
+              <span style={{
+                display: 'inline-block', padding: '4px 10px', borderRadius: 20,
+                fontSize: 12, fontWeight: 600,
+                background: { 'Client': '#fffbeb', 'Media Buyer': '#eef2ff', 'Funneler': '#ecfdf5', 'Video Editor': '#faf5ff', 'Graphic Designer': '#fff1f2' }[item.task.responsable_rol] || '#f3f4f6',
+                color: { 'Client': '#b45309', 'Media Buyer': '#4338ca', 'Funneler': '#047857', 'Video Editor': '#7e22ce', 'Graphic Designer': '#be123c' }[item.task.responsable_rol] || '#374151',
+                border: '1px solid',
+                borderColor: { 'Client': '#fde68a', 'Media Buyer': '#c7d2fe', 'Funneler': '#a7f3d0', 'Video Editor': '#e9d5ff', 'Graphic Designer': '#fecdd3' }[item.task.responsable_rol] || '#e5e7eb',
+              }}>
+                {item.task.responsable_rol}
+              </span>
+            </div>
+          )}
+
+          {/* Priority */}
+          {item.task.prioridad && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Priority
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: { high: '#ef4444', medium: '#f59e0b', low: '#d1d5db' }[item.task.prioridad] || '#d1d5db',
+                }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#374151', textTransform: 'capitalize' }}>
+                  {item.task.prioridad}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Due Date */}
+          {item.task.fecha_limite && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Due Date
+              </label>
+              <div style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>
+                {item.task.fecha_limite.split('T')[0]}
+              </div>
+            </div>
+          )}
+
           {/* Area */}
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Area
             </label>
@@ -207,6 +268,18 @@ function TaskDrawer({ item, onClose, onOpenClient }) {
               {AREAS.find(a => a.id === item.section.area)?.name || item.section.area}
             </div>
           </div>
+
+          {/* Last Updated */}
+          {item.task.actualizado_en && (
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Last Updated
+              </label>
+              <div style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>
+                {new Date(item.task.actualizado_en).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
