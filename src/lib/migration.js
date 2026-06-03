@@ -460,6 +460,188 @@ export const runResetToUserTasks = async (userId) => {
   console.log(`Reset complete: ${count} tasks created.`)
 }
 
+// ─── PATCH V4: rename clients, add missing clients, seed Google Ads tasks ────
+
+const CLIENT_RENAMES = {
+  'AGNEW': 'Agnew Family Wellness',
+  'BLOOMFIELD': 'Bloomfield',
+  'GRASS LAKE': 'Grass Lake Chiropractic Center',
+  'DELTA': 'Delta Chiropractic',
+  'ECKERT': 'Eckert Chiropractic, P.C.',
+  'MOORE': 'Moore Chiropractic',
+  'MESA': 'Mesa Chiropractic Rehab and Wellness',
+  'PURE SEOUL': 'Pure Seoul Aesthetics',
+  'NAPLES IDEAL FITNESS': 'Ideal Physical Therapy and Fitness',
+  'AGE REVERSAL TECHNOLOGY CENTER': 'Age Reversal Technology Center',
+}
+
+const NEW_CLIENTS = [
+  'Prime Tree Care',
+  'All Around Asphalt',
+  'Parkway Paving',
+  'All Dry Services of North Las Vegas',
+  'DNA Honest Plumbing',
+  'Pagac & Company, P.C.',
+  'Green Z Remodeling',
+  'First Choice Chiropractic & Medical Center',
+  'Wonders of Chiropractic',
+  'The Family Wellness Center',
+  'Colorado Pro Health Rehab Kids & Adults',
+  'HealthSource Chiropractic of Marlboro',
+]
+
+const GOOGLE_ADS_TASKS = [
+  { title: 'Adv. Verification', role: 'Media Buyer' },
+  { title: 'Connect SiteKit (Google Tag)', role: 'Funneler' },
+  { title: 'Google Tag Installation', role: 'Funneler' },
+  { title: 'Install GHL # Script', role: 'Funneler' },
+  { title: 'Map GHL Conv. > Google Ads', role: 'Media Buyer' },
+  { title: 'Create Conv. Actions', role: 'Media Buyer' },
+  { title: 'Create Campaigns', role: 'Media Buyer' },
+  { title: 'Connect GMB', role: 'Media Buyer' },
+  { title: 'Create Assets', role: 'Graphic Designer' },
+  { title: 'Launch Campaigns', role: 'Media Buyer' },
+]
+
+export const runPatchV4 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v4_clients_rename_and_google_ads')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  console.log('Running patch v4: rename clients, add new clients, seed Google Ads...')
+
+  const [clientsSnap, sectionsSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+  ])
+
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  let sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+  let count = 0
+
+  // --- a) Rename existing clients ---
+  const renameBatch = writeBatch(db)
+  for (const client of clients) {
+    const newName = CLIENT_RENAMES[client.name]
+    if (newName && newName !== client.name) {
+      renameBatch.update(doc(db, 'clients', client.id), { name: newName })
+      count++
+    }
+  }
+  await renameBatch.commit()
+  console.log(`Renamed ${count} clients.`)
+
+  // --- b) Ensure "Google Ads" section exists ---
+  let googleAdsSection = sections.find(s => s.nombre === 'Google Ads')
+  if (!googleAdsSection) {
+    const maxOrden = Math.max(...sections.map(s => s.orden || 0), 0)
+    const secRef = doc(collection(db, 'checklist_sections'))
+    await setDoc(secRef, {
+      nombre: 'Google Ads',
+      area: 'google_ads',
+      orden: maxOrden + 1,
+      creado_en: now,
+    })
+    googleAdsSection = { id: secRef.id, nombre: 'Google Ads', area: 'google_ads' }
+    sections = [...sections, googleAdsSection]
+    console.log('Created "Google Ads" section.')
+  }
+
+  // --- c) Create new clients with template tasks + Google Ads ---
+  const existingNames = new Set(clients.map(c => c.name))
+  // Also check renamed names
+  Object.values(CLIENT_RENAMES).forEach(n => existingNames.add(n))
+
+  const newClientIds = []
+
+  for (let i = 0; i < NEW_CLIENTS.length; i += 4) {
+    const chunk = NEW_CLIENTS.slice(i, i + 4)
+    const batch = writeBatch(db)
+
+    for (const name of chunk) {
+      if (existingNames.has(name)) continue
+
+      const clientRef = doc(collection(db, 'clients'))
+      batch.set(clientRef, { name, status: 'Active', creado_en: now, creado_por: userId })
+      newClientIds.push(clientRef.id)
+
+      // Seed template tasks (meta_ads)
+      for (const tpl of TEMPLATE_TASKS) {
+        const sec = sections.find(s => s.nombre === tpl.sectionName)
+        if (!sec) continue
+        const taskRef = doc(collection(db, 'checklist_tasks'))
+        batch.set(taskRef, {
+          titulo: tpl.title,
+          responsable_rol: tpl.role,
+          seccion_id: sec.id,
+          client_id: clientRef.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'medium',
+          responsable_id: null,
+          creado_por: userId,
+          creado_en: now,
+          actualizado_en: now,
+        })
+      }
+    }
+
+    await batch.commit()
+  }
+  console.log(`Created ${newClientIds.length} new clients with template tasks.`)
+
+  // --- d) Seed Google Ads tasks for ALL existing clients ---
+  // Re-fetch clients to include newly created ones
+  const allClientsSnap = await getDocs(collection(db, 'clients'))
+  const allClients = allClientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  // Check which clients already have Google Ads tasks
+  const existingTasksSnap = await getDocs(collection(db, 'checklist_tasks'))
+  const existingGATasks = new Set()
+  for (const d of existingTasksSnap.docs) {
+    const data = d.data()
+    if (data.seccion_id === googleAdsSection.id) {
+      existingGATasks.add(`${data.client_id}|${data.titulo}`)
+    }
+  }
+
+  let gaCount = 0
+  for (let i = 0; i < allClients.length; i += 3) {
+    const chunk = allClients.slice(i, i + 3)
+    const batch = writeBatch(db)
+
+    for (const client of chunk) {
+      for (const ga of GOOGLE_ADS_TASKS) {
+        const key = `${client.id}|${ga.title}`
+        if (existingGATasks.has(key)) continue
+
+        const taskRef = doc(collection(db, 'checklist_tasks'))
+        batch.set(taskRef, {
+          titulo: ga.title,
+          responsable_rol: ga.role,
+          seccion_id: googleAdsSection.id,
+          client_id: client.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'medium',
+          responsable_id: null,
+          creado_por: userId,
+          creado_en: now,
+          actualizado_en: now,
+        })
+        gaCount++
+      }
+    }
+
+    await batch.commit()
+  }
+
+  // Mark patch as applied
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_renamed: count, clients_created: newClientIds.length, google_ads_tasks: gaCount })
+  console.log(`Patch v4 done: ${gaCount} Google Ads tasks created.`)
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

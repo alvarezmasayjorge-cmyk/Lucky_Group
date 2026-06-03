@@ -8,7 +8,7 @@ import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
 import MatrixView from './MatrixView'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -80,6 +80,7 @@ export default function Dashboard({ user, profile }) {
         await runInitialMigrationAndSeed(user.uid)
       await runPatchV1(user.uid)
       await runResetToUserTasks(user.uid)
+      await runPatchV4(user.uid)
 
         const qSecciones = query(collection(db, 'checklist_sections'), orderBy('orden'))
         const secSnap = await getDocs(qSecciones)

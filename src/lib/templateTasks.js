@@ -9,6 +9,7 @@ export const TEMPLATE_SECTIONS = [
   { name: '1. GOOGLE ADS SETUP', area: 'google_ads' },
   { name: '2. SEARCH CAMPAIGNS', area: 'google_ads' },
   { name: '3. TRACKING & CONVERSIONS', area: 'google_ads' },
+  { name: 'Google Ads', area: 'google_ads' },
   { name: '1. ACCOUNT CONFIGURATION', area: 'ghl' },
   { name: '2. FUNNEL CREATION', area: 'ghl' },
   { name: '3. AUTOMATION & WORKFLOWS', area: 'ghl' }
@@ -77,5 +78,17 @@ export const TEMPLATE_TASKS = [
   // 7. IMAGE AD CREATION
   { sectionName: '7. IMAGE AD CREATION', title: 'Design static image ad — Feed (1:1)', role: 'Graphic Designer' },
   { sectionName: '7. IMAGE AD CREATION', title: 'Design static image ad — Stories (9:16)', role: 'Graphic Designer' },
-  { sectionName: '7. IMAGE AD CREATION', title: 'Export all files in correct sizes', role: 'Graphic Designer' }
+  { sectionName: '7. IMAGE AD CREATION', title: 'Export all files in correct sizes', role: 'Graphic Designer' },
+
+  // Google Ads
+  { sectionName: 'Google Ads', title: 'Adv. Verification', role: 'Media Buyer' },
+  { sectionName: 'Google Ads', title: 'Connect SiteKit (Google Tag)', role: 'Funneler' },
+  { sectionName: 'Google Ads', title: 'Google Tag Installation', role: 'Funneler' },
+  { sectionName: 'Google Ads', title: 'Install GHL # Script', role: 'Funneler' },
+  { sectionName: 'Google Ads', title: 'Map GHL Conv. > Google Ads', role: 'Media Buyer' },
+  { sectionName: 'Google Ads', title: 'Create Conv. Actions', role: 'Media Buyer' },
+  { sectionName: 'Google Ads', title: 'Create Campaigns', role: 'Media Buyer' },
+  { sectionName: 'Google Ads', title: 'Connect GMB', role: 'Media Buyer' },
+  { sectionName: 'Google Ads', title: 'Create Assets', role: 'Graphic Designer' },
+  { sectionName: 'Google Ads', title: 'Launch Campaigns', role: 'Media Buyer' },
 ];

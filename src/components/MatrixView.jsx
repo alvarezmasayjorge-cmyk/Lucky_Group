@@ -365,10 +365,10 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
     setCollapsed(prev => ({ ...prev, [secId]: !prev[secId] }))
   }
 
-  const CELL_W = 56
+  const CELL_W = 130
   const ROW_H = 40
   const SECTION_H = 36
-  const HEADER_H = 96
+  const HEADER_H = 52
   const PROCESS_COL_W = 220
 
   return (
@@ -468,32 +468,32 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                   title={client.name}
                   style={{
                     width: CELL_W, minWidth: CELL_W, height: HEADER_H,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
-                    paddingBottom: 8, borderRight: '1px solid #e5e7eb',
-                    cursor: 'pointer', position: 'relative',
+                    display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                    padding: '6px 8px', borderRight: '1px solid #e5e7eb',
+                    cursor: 'pointer',
                     background: isHL ? '#dbeafe' : 'white',
                     transition: 'background 0.12s',
+                    gap: 4,
                   }}
                 >
                   <span style={{
-                    transform: 'rotate(-45deg)',
-                    transformOrigin: 'center center',
-                    whiteSpace: 'nowrap',
-                    fontSize: 10, fontWeight: 700, color: isHL ? '#1d4ed8' : '#374151',
-                    position: 'absolute', bottom: 42,
-                    maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis',
+                    fontSize: 11, fontWeight: 700, color: isHL ? '#1d4ed8' : '#374151',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    lineHeight: 1.2,
                   }}>
                     {client.name}
                   </span>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', position: 'absolute', bottom: 18 }}>
-                    {pct}%
-                  </span>
-                  <div style={{ width: 42, height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden', position: 'absolute', bottom: 8 }}>
-                    <div style={{
-                      height: '100%', background: '#2E7D32', borderRadius: 2,
-                      width: progressLoaded ? `${pct}%` : 0,
-                      transition: 'width 0.8s ease-out',
-                    }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ flex: 1, height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', background: '#2E7D32', borderRadius: 2,
+                        width: progressLoaded ? `${pct}%` : 0,
+                        transition: 'width 0.8s ease-out',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', flexShrink: 0 }}>
+                      {pct}%
+                    </span>
                   </div>
                 </div>
               )
