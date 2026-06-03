@@ -7,6 +7,7 @@ import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
+import MatrixView from './MatrixView'
 import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
@@ -30,6 +31,7 @@ export default function Dashboard({ user, profile }) {
   const [activeClient, setActiveClient] = useState(null)
   const [activeArea, setActiveArea] = useState('meta_ads')
   const [activeView, setActiveView] = useState('board') // 'board' | 'team'
+  const [masterView, setMasterView] = useState('table') // 'table' | 'matrix'
 
   // Filters
   const [selectedSeccion, setSelectedSeccion] = useState('all')
@@ -258,16 +260,46 @@ export default function Dashboard({ user, profile }) {
               </h2>
               <p className="text-gray-500 mt-1">Manage all client workspaces from this master sheet.</p>
             </div>
-            <button
-              onClick={() => setShowNewClientModal(true)}
-              disabled={isCreatingClient}
-              className="flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-black transition-all shadow-md hover:shadow-lg font-bold disabled:opacity-50"
-            >
-              <Plus className="w-5 h-5 mr-1" />
-              New Client
-            </button>
+            <div className="flex items-center gap-3">
+              {/* View toggle */}
+              <div className="flex items-center bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+                <button
+                  onClick={() => setMasterView('table')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${masterView === 'table' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  Table
+                </button>
+                <button
+                  onClick={() => setMasterView('matrix')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${masterView === 'matrix' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  Matrix
+                </button>
+              </div>
+              <button
+                onClick={() => setShowNewClientModal(true)}
+                disabled={isCreatingClient}
+                className="flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-black transition-all shadow-md hover:shadow-lg font-bold disabled:opacity-50"
+              >
+                <Plus className="w-5 h-5 mr-1" />
+                New Client
+              </button>
+            </div>
           </div>
 
+          {masterView === 'matrix' ? (
+            <MatrixView
+              clients={clients}
+              allTareas={allTareas}
+              secciones={secciones}
+              onOpenClient={(client) => {
+                setActiveClient(client)
+                setMasterView('table')
+              }}
+            />
+          ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -329,6 +361,7 @@ export default function Dashboard({ user, profile }) {
               </tbody>
             </table>
           </div>
+          )}
         </main>
 
         <NewClientModal
