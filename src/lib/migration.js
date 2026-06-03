@@ -1,5 +1,5 @@
 import { db } from './firebase'
-import { collection, doc, writeBatch, getDocs, query, limit, setDoc, getDoc } from 'firebase/firestore'
+import { collection, doc, writeBatch, getDocs, query, limit, setDoc, getDoc, deleteDoc } from 'firebase/firestore'
 import { TEMPLATE_SECTIONS, TEMPLATE_TASKS } from './templateTasks'
 
 // Tasks to patch into existing clients (added after initial seeding)
