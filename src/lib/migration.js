@@ -642,6 +642,68 @@ export const runPatchV4 = async (userId) => {
   console.log(`Patch v4 done: ${gaCount} Google Ads tasks created.`)
 }
 
+// ─── PATCH V5: redistribute Google Ads tasks into 3 sections ────────────────
+
+const GA_TASK_TO_SECTION = {
+  'Adv. Verification': '1. GOOGLE ADS SETUP',
+  'Connect SiteKit (Google Tag)': '1. GOOGLE ADS SETUP',
+  'Google Tag Installation': '1. GOOGLE ADS SETUP',
+  'Install GHL # Script': '1. GOOGLE ADS SETUP',
+  'Connect GMB': '1. GOOGLE ADS SETUP',
+  'Create Campaigns': '2. SEARCH CAMPAIGNS',
+  'Create Assets': '2. SEARCH CAMPAIGNS',
+  'Launch Campaigns': '2. SEARCH CAMPAIGNS',
+  'Map GHL Conv. > Google Ads': '3. TRACKING & CONVERSIONS',
+  'Create Conv. Actions': '3. TRACKING & CONVERSIONS',
+}
+
+export const runPatchV5 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v5_redistribute_google_ads')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  console.log('Running patch v5: redistribute Google Ads tasks...')
+
+  const [sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const googleAdsSection = sections.find(s => s.nombre === 'Google Ads')
+  if (!googleAdsSection) {
+    console.log('No "Google Ads" section found, skipping.')
+    await setDoc(patchRef, { applied_at: new Date().toISOString(), applied_by: userId, skipped: true })
+    return
+  }
+
+  const now = new Date().toISOString()
+  let count = 0
+
+  // Move tasks from "Google Ads" to the proper section
+  const tasksToMove = tasksSnap.docs.filter(d => d.data().seccion_id === googleAdsSection.id)
+
+  for (let i = 0; i < tasksToMove.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const taskDoc of tasksToMove.slice(i, i + 400)) {
+      const data = taskDoc.data()
+      const targetSectionName = GA_TASK_TO_SECTION[data.titulo]
+      if (!targetSectionName) continue
+      const targetSection = sections.find(s => s.nombre === targetSectionName)
+      if (!targetSection) continue
+      batch.update(taskDoc.ref, { seccion_id: targetSection.id, actualizado_en: now })
+      count++
+    }
+    await batch.commit()
+  }
+
+  // Delete the now-empty "Google Ads" section
+  await deleteDoc(doc(db, 'checklist_sections', googleAdsSection.id))
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_moved: count })
+  console.log(`Patch v5 done: ${count} tasks redistributed, "Google Ads" section deleted.`)
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

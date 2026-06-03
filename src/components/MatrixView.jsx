@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { updateDoc, doc } from 'firebase/firestore'
+import { updateDoc, deleteDoc, doc, collection, addDoc, writeBatch, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid } from 'lucide-react'
+import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus } from 'lucide-react'
 import { AREAS } from '../lib/constants'
 
 const AREA_FILTERS = [
@@ -84,9 +84,10 @@ function Cell({ task, isColHL, isRowHL, onHover, onLeave, onClick }) {
 
 // ── Task Drawer ────────────────────────────────────────────────────────────────
 
-function TaskDrawer({ item, onClose, onOpenClient }) {
+function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
   const [saving, setSaving] = useState(false)
   const [localStatus, setLocalStatus] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (item) setLocalStatus(getStatus(item.task))
@@ -283,7 +284,7 @@ function TaskDrawer({ item, onClose, onOpenClient }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid #f3f4f6' }}>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             onClick={() => { onOpenClient(item.client); onClose() }}
             style={{
@@ -296,6 +297,39 @@ function TaskDrawer({ item, onClose, onOpenClient }) {
             <ExternalLink style={{ width: 14, height: 14 }} />
             Open Full Board
           </button>
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{
+                width: '100%', padding: '11px', borderRadius: 10,
+                background: 'white', color: '#ef4444',
+                fontWeight: 700, fontSize: 13, border: '1.5px solid #fecdd3', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              }}
+            >
+              <Trash2 style={{ width: 14, height: 14 }} />
+              Delete Task
+            </button>
+          ) : (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                style={{ flex: 1, padding: '11px', borderRadius: 10, background: 'white', color: '#6b7280', fontWeight: 700, fontSize: 13, border: '1.5px solid #e5e7eb', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await deleteDoc(doc(db, 'checklist_tasks', item.task.id))
+                  onDeleteTask()
+                  onClose()
+                }}
+                style={{ flex: 1, padding: '11px', borderRadius: 10, background: '#ef4444', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }}
+              >
+                Confirm Delete
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -323,7 +357,7 @@ function Tooltip({ text, x, y }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-export default function MatrixView({ clients, allTareas, secciones, onOpenClient }) {
+export default function MatrixView({ clients, allTareas, secciones, onOpenClient, profile }) {
   const [areaFilter, setAreaFilter] = useState('all')
   const [highlightCol, setHighlightCol] = useState(null)
   const [highlightRow, setHighlightRow] = useState(null)
@@ -331,6 +365,12 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
   const [drawerItem, setDrawerItem] = useState(null)
   const [tooltip, setTooltip] = useState(null)
   const [progressLoaded, setProgressLoaded] = useState(false)
+  const [showNewSection, setShowNewSection] = useState(false)
+  const [newSectionName, setNewSectionName] = useState('')
+  const [newSectionArea, setNewSectionArea] = useState('meta_ads')
+  const [addingTaskSec, setAddingTaskSec] = useState(null)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [deletingSec, setDeletingSec] = useState(null)
 
   const processColRef = useRef(null)
   const cellsBodyRef = useRef(null)
@@ -436,6 +476,60 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
 
   const toggleCollapse = (secId) => {
     setCollapsed(prev => ({ ...prev, [secId]: !prev[secId] }))
+  }
+
+  const handleCreateSection = async () => {
+    if (!newSectionName.trim()) return
+    const maxOrden = Math.max(...secciones.map(s => s.orden || 0), 0)
+    await addDoc(collection(db, 'checklist_sections'), {
+      nombre: newSectionName.trim(),
+      area: newSectionArea,
+      orden: maxOrden + 1,
+      creado_en: new Date().toISOString(),
+    })
+    setNewSectionName('')
+    setShowNewSection(false)
+  }
+
+  const handleDeleteSection = async (secId) => {
+    // Delete all tasks in this section for all clients
+    const tasksInSection = allTareas.filter(t => t.seccion_id === secId)
+    for (let i = 0; i < tasksInSection.length; i += 400) {
+      const batch = writeBatch(db)
+      tasksInSection.slice(i, i + 400).forEach(t => batch.delete(doc(db, 'checklist_tasks', t.id)))
+      await batch.commit()
+    }
+    // Delete the section itself
+    await deleteDoc(doc(db, 'checklist_sections', secId))
+    setDeletingSec(null)
+  }
+
+  const handleAddTask = async (secId) => {
+    if (!newTaskTitle.trim()) return
+    const now = new Date().toISOString()
+    // Add for all clients
+    for (let i = 0; i < clients.length; i += 10) {
+      const batch = writeBatch(db)
+      clients.slice(i, i + 10).forEach(client => {
+        const ref = doc(collection(db, 'checklist_tasks'))
+        batch.set(ref, {
+          titulo: newTaskTitle.trim(),
+          responsable_rol: '',
+          seccion_id: secId,
+          client_id: client.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'medium',
+          responsable_id: null,
+          creado_por: profile?.id || '',
+          creado_en: now,
+          actualizado_en: now,
+        })
+      })
+      await batch.commit()
+    }
+    setNewTaskTitle('')
+    setAddingTaskSec(null)
   }
 
   const CELL_W = 52
@@ -588,24 +682,73 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
               <div key={sec.id}>
                 {/* Section header */}
                 <div
-                  onClick={() => toggleCollapse(sec.id)}
                   style={{
                     background: '#1e3a5f', color: 'white',
                     height: SECTION_H, display: 'flex', alignItems: 'center',
-                    padding: '0 12px', cursor: 'pointer', gap: 6,
+                    padding: '0 8px 0 12px', gap: 6,
                     fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
                     userSelect: 'none',
                   }}
-                  onMouseOver={e => { e.currentTarget.style.background = '#16304f' }}
-                  onMouseOut={e => { e.currentTarget.style.background = '#1e3a5f' }}
                 >
-                  <ChevronDown style={{
-                    width: 12, height: 12, flexShrink: 0,
-                    transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
-                    transition: 'transform 0.2s',
-                  }} />
-                  {sec.nombre}
+                  <div
+                    onClick={() => toggleCollapse(sec.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, cursor: 'pointer', overflow: 'hidden' }}
+                  >
+                    <ChevronDown style={{
+                      width: 12, height: 12, flexShrink: 0,
+                      transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                      transition: 'transform 0.2s',
+                    }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sec.nombre}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAddingTaskSec(addingTaskSec === sec.id ? null : sec.id); setNewTaskTitle('') }}
+                      title="Add task"
+                      style={{ padding: 2, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', borderRadius: 4 }}
+                      onMouseOver={e => e.currentTarget.style.color = 'white'}
+                      onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                    >
+                      <Plus style={{ width: 14, height: 14 }} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeletingSec(deletingSec === sec.id ? null : sec.id) }}
+                      title="Delete section"
+                      style={{ padding: 2, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', borderRadius: 4 }}
+                      onMouseOver={e => e.currentTarget.style.color = '#fca5a5'}
+                      onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                    >
+                      <Trash2 style={{ width: 13, height: 13 }} />
+                    </button>
+                  </div>
                 </div>
+
+                {/* Delete section confirmation */}
+                {deletingSec === sec.id && (
+                  <div style={{ background: '#fff1f2', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #fecdd3' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#be123c', flex: 1 }}>Delete section and all its tasks?</span>
+                    <button onClick={() => setDeletingSec(null)} style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', background: 'white', border: '1px solid #e5e7eb', borderRadius: 6, padding: '3px 8px', cursor: 'pointer' }}>No</button>
+                    <button onClick={() => handleDeleteSection(sec.id)} style={{ fontSize: 11, fontWeight: 700, color: 'white', background: '#ef4444', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer' }}>Yes</button>
+                  </div>
+                )}
+
+                {/* Add task input */}
+                {addingTaskSec === sec.id && isOpen && (
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e5e7eb', background: '#f0fdf4', gap: 4 }}>
+                    <input
+                      autoFocus
+                      value={newTaskTitle}
+                      onChange={e => setNewTaskTitle(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleAddTask(sec.id); if (e.key === 'Escape') setAddingTaskSec(null) }}
+                      placeholder="New task name..."
+                      style={{ flex: 1, fontSize: 12, padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
+                    />
+                    <button
+                      onClick={() => handleAddTask(sec.id)}
+                      style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2E7D32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                    >Add</button>
+                  </div>
+                )}
 
                 {/* Task rows */}
                 {isOpen && tasks.map((titulo, idx) => {
@@ -636,6 +779,45 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
               </div>
             )
           })}
+
+          {/* Add new section button */}
+          {!showNewSection ? (
+            <button
+              onClick={() => setShowNewSection(true)}
+              style={{
+                width: '100%', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                background: 'white', border: 'none', borderTop: '1px solid #e5e7eb',
+                cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#9ca3af',
+                transition: 'all 0.15s',
+              }}
+              onMouseOver={e => { e.currentTarget.style.color = '#2E7D32'; e.currentTarget.style.background = '#f0fdf4' }}
+              onMouseOut={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'white' }}
+            >
+              <Plus style={{ width: 14, height: 14 }} /> Add Section
+            </button>
+          ) : (
+            <div style={{ padding: '10px 12px', borderTop: '1px solid #e5e7eb', background: '#f9fafb' }}>
+              <input
+                autoFocus
+                value={newSectionName}
+                onChange={e => setNewSectionName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleCreateSection(); if (e.key === 'Escape') setShowNewSection(false) }}
+                placeholder="Section name..."
+                style={{ width: '100%', fontSize: 12, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', marginBottom: 6, fontFamily: 'inherit' }}
+              />
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <select
+                  value={newSectionArea}
+                  onChange={e => setNewSectionArea(e.target.value)}
+                  style={{ flex: 1, fontSize: 11, padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
+                >
+                  {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+                <button onClick={handleCreateSection} style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2E7D32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Add</button>
+                <button onClick={() => setShowNewSection(false)} style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, background: 'white', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>✕</button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Cell grid */}
@@ -658,6 +840,16 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                       <div key={client.id} style={{ flex: '1 1 0', minWidth: 0, borderRight: '1px solid #16304f' }} />
                     ))}
                   </div>
+
+                  {/* Spacer for delete confirmation */}
+                  {deletingSec === sec.id && (
+                    <div style={{ height: 37, background: '#fff1f2', borderBottom: '1px solid #fecdd3' }} />
+                  )}
+
+                  {/* Spacer for add task input */}
+                  {addingTaskSec === sec.id && isOpen && (
+                    <div style={{ height: 37, background: '#f0fdf4', borderBottom: '1px solid #e5e7eb' }} />
+                  )}
 
                   {/* Task cells */}
                   {isOpen && tasks.map((titulo, idx) => {
@@ -699,6 +891,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           item={drawerItem}
           onClose={() => setDrawerItem(null)}
           onOpenClient={onOpenClient}
+          onDeleteTask={() => setDrawerItem(null)}
         />
       )}
     </>

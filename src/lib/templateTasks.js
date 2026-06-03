@@ -9,7 +9,6 @@ export const TEMPLATE_SECTIONS = [
   { name: '1. GOOGLE ADS SETUP', area: 'google_ads' },
   { name: '2. SEARCH CAMPAIGNS', area: 'google_ads' },
   { name: '3. TRACKING & CONVERSIONS', area: 'google_ads' },
-  { name: 'Google Ads', area: 'google_ads' },
   { name: '1. ACCOUNT CONFIGURATION', area: 'ghl' },
   { name: '2. FUNNEL CREATION', area: 'ghl' },
   { name: '3. AUTOMATION & WORKFLOWS', area: 'ghl' }
@@ -80,15 +79,19 @@ export const TEMPLATE_TASKS = [
   { sectionName: '7. IMAGE AD CREATION', title: 'Design static image ad — Stories (9:16)', role: 'Graphic Designer' },
   { sectionName: '7. IMAGE AD CREATION', title: 'Export all files in correct sizes', role: 'Graphic Designer' },
 
-  // Google Ads
-  { sectionName: 'Google Ads', title: 'Adv. Verification', role: 'Media Buyer' },
-  { sectionName: 'Google Ads', title: 'Connect SiteKit (Google Tag)', role: 'Funneler' },
-  { sectionName: 'Google Ads', title: 'Google Tag Installation', role: 'Funneler' },
-  { sectionName: 'Google Ads', title: 'Install GHL # Script', role: 'Funneler' },
-  { sectionName: 'Google Ads', title: 'Map GHL Conv. > Google Ads', role: 'Media Buyer' },
-  { sectionName: 'Google Ads', title: 'Create Conv. Actions', role: 'Media Buyer' },
-  { sectionName: 'Google Ads', title: 'Create Campaigns', role: 'Media Buyer' },
-  { sectionName: 'Google Ads', title: 'Connect GMB', role: 'Media Buyer' },
-  { sectionName: 'Google Ads', title: 'Create Assets', role: 'Graphic Designer' },
-  { sectionName: 'Google Ads', title: 'Launch Campaigns', role: 'Media Buyer' },
+  // 1. GOOGLE ADS SETUP (one-time access & setup)
+  { sectionName: '1. GOOGLE ADS SETUP', title: 'Adv. Verification', role: 'Media Buyer' },
+  { sectionName: '1. GOOGLE ADS SETUP', title: 'Connect SiteKit (Google Tag)', role: 'Funneler' },
+  { sectionName: '1. GOOGLE ADS SETUP', title: 'Google Tag Installation', role: 'Funneler' },
+  { sectionName: '1. GOOGLE ADS SETUP', title: 'Install GHL # Script', role: 'Funneler' },
+  { sectionName: '1. GOOGLE ADS SETUP', title: 'Connect GMB', role: 'Media Buyer' },
+
+  // 2. SEARCH CAMPAIGNS (campaign creation)
+  { sectionName: '2. SEARCH CAMPAIGNS', title: 'Create Campaigns', role: 'Media Buyer' },
+  { sectionName: '2. SEARCH CAMPAIGNS', title: 'Create Assets', role: 'Graphic Designer' },
+  { sectionName: '2. SEARCH CAMPAIGNS', title: 'Launch Campaigns', role: 'Media Buyer' },
+
+  // 3. TRACKING & CONVERSIONS
+  { sectionName: '3. TRACKING & CONVERSIONS', title: 'Map GHL Conv. > Google Ads', role: 'Media Buyer' },
+  { sectionName: '3. TRACKING & CONVERSIONS', title: 'Create Conv. Actions', role: 'Media Buyer' },
 ];
