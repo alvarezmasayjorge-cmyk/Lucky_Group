@@ -195,15 +195,19 @@ export default function Dashboard({ user, profile }) {
   // Per-client task stats for master view (memoized)
   const getTaskStatus = (t) => t.status ?? (t.completed ? 'completed' : 'pending')
 
+  const sectionIdSet = useMemo(() => new Set(secciones.map(s => s.id)), [secciones])
+
   const clientStats = useMemo(() => {
     const map = {}
     for (const t of allTareas) {
+      // Only count tasks that belong to an existing section (orphaned tasks are invisible in boards)
+      if (!sectionIdSet.has(t.seccion_id)) continue
       if (!map[t.client_id]) map[t.client_id] = { total: 0, completed: 0 }
       map[t.client_id].total++
       if (getTaskStatus(t) === 'completed') map[t.client_id].completed++
     }
     return map
-  }, [allTareas])
+  }, [allTareas, sectionIdSet])
 
   // Client view data (memoized)
   const areaSections = useMemo(
