@@ -759,6 +759,70 @@ export const runPatchV6 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
 }
 
+// ─── PATCH V7: seed all TEMPLATE_TASKS for every client ──────────────────────
+// Ensures every client (old and new) has the standard tasks for Meta Ads,
+// Google Ads, and GHL. Skips tasks that already exist (by title + section).
+
+export const runPatchV7 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v7_seed_all_clients_full_template')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const [clientsSnap, sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  // Build duplicate-check set: "clientId|sectionId|titulo"
+  const existingKeys = new Set(
+    tasksSnap.docs.map(d => {
+      const t = d.data()
+      return `${t.client_id}|${t.seccion_id}|${t.titulo}`
+    })
+  )
+
+  let count = 0
+
+  for (let i = 0; i < clients.length; i += 4) {
+    const chunk = clients.slice(i, i + 4)
+    const batch = writeBatch(db)
+
+    for (const client of chunk) {
+      for (const tpl of TEMPLATE_TASKS) {
+        const sec = sections.find(s => s.nombre === tpl.sectionName)
+        if (!sec) continue
+        const key = `${client.id}|${sec.id}|${tpl.title}`
+        if (existingKeys.has(key)) continue
+
+        const taskRef = doc(collection(db, 'checklist_tasks'))
+        batch.set(taskRef, {
+          titulo: tpl.title,
+          responsable_rol: tpl.role,
+          seccion_id: sec.id,
+          client_id: client.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'medium',
+          responsable_id: null,
+          creado_por: userId,
+          creado_en: now,
+          actualizado_en: now,
+        })
+        count++
+      }
+    }
+
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
