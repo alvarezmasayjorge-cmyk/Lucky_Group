@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { updateDoc, deleteDoc, doc, collection, addDoc, writeBatch, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2 } from 'lucide-react'
+import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2, Share2 } from 'lucide-react'
 import { AREAS } from '../lib/constants'
 
 const COL_MIN_W = 60
@@ -90,6 +90,7 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
   const [saving, setSaving] = useState(false)
   const [localStatus, setLocalStatus] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (item) setLocalStatus(getStatus(item.task))
@@ -310,7 +311,38 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
         {/* Footer */}
         <div style={{ padding: '16px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
-            onClick={() => { onOpenClient(item.client); onClose() }}
+            onClick={async () => {
+              const status = localStatus || getStatus(item.task)
+              const statusLabel = { pending: '⬜ Pending', in_progress: '🟡 In Progress', completed: '✅ Completed' }[status] || '—'
+              const lines = [
+                `📋 *Task: ${item.task.titulo}*`,
+                `👤 Client: ${item.client.name}`,
+                `📂 Section: ${item.section.nombre}`,
+                `🔘 Status: ${statusLabel}`,
+                item.task.responsable_rol ? `👥 Role: ${item.task.responsable_rol}` : null,
+                item.task.fecha_limite ? `📅 Due: ${item.task.fecha_limite.split('T')[0]}` : null,
+                item.task.delivery_link ? `🔗 Delivery: ${item.task.delivery_link}` : null,
+              ].filter(Boolean).join('\n')
+              if (navigator.share) {
+                try { await navigator.share({ title: item.task.titulo, text: lines }) } catch {}
+              } else {
+                await navigator.clipboard.writeText(lines)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              }
+            }}
+            style={{
+              width: '100%', padding: '11px', borderRadius: 10,
+              background: '#2563eb', color: 'white',
+              fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            }}
+          >
+            <Share2 style={{ width: 14, height: 14 }} />
+            {copied ? 'Copied to clipboard!' : 'Share Task'}
+          </button>
+          <button
+            onClick={() => { onOpenClient(item.client, item.task.id, item.section.area); onClose() }}
             style={{
               width: '100%', padding: '11px', borderRadius: 10,
               background: '#2E7D32', color: 'white',

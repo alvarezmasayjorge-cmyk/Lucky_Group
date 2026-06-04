@@ -61,6 +61,9 @@ export default function Dashboard({ user, profile }) {
     })
   }, [])
 
+  // Highlight task (from matrix → board navigation)
+  const [highlightTaskId, setHighlightTaskId] = useState(null)
+
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
@@ -72,6 +75,21 @@ export default function Dashboard({ user, profile }) {
     setCollapsedSections({})
     if (!activeClient) setActiveView('board')
   }, [activeArea, activeClient])
+
+  // Scroll to and highlight task when navigating from matrix
+  useEffect(() => {
+    if (!highlightTaskId) return
+    const task = allTareas.find(t => t.id === highlightTaskId)
+    if (task) {
+      setCollapsedSections(prev => ({ ...prev, [task.seccion_id]: true }))
+    }
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`task-${highlightTaskId}`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 400)
+    const clear = setTimeout(() => setHighlightTaskId(null), 2500)
+    return () => { clearTimeout(timer); clearTimeout(clear) }
+  }, [highlightTaskId, allTareas])
 
   useEffect(() => {
     const fetchStaticData = async () => {
@@ -299,9 +317,11 @@ export default function Dashboard({ user, profile }) {
               allTareas={allTareas}
               secciones={secciones}
               profile={profile}
-              onOpenClient={(client) => {
+              onOpenClient={(client, taskId, area) => {
                 setActiveClient(client)
                 setMasterView('table')
+                if (area) setActiveArea(area)
+                if (taskId) setHighlightTaskId(taskId)
               }}
             />
           ) : (
@@ -672,6 +692,8 @@ export default function Dashboard({ user, profile }) {
                           task={task}
                           profiles={profiles}
                           onEdit={handleOpenEdit}
+                          isHighlighted={task.id === highlightTaskId}
+                          clientName={activeClient?.name}
                         />
                       ))
                     ) : (

@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle, X, Link2 } from 'lucide-react'
+import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle, X, Link2, Share2 } from 'lucide-react'
 import { db } from '../lib/firebase'
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG } from '../lib/constants'
@@ -10,8 +10,9 @@ function StatusIcon({ status }) {
   return <Circle className="w-[22px] h-[22px] text-gray-300 hover:text-amber-400" />
 }
 
-function TaskItem({ task, profiles, onEdit }) {
+function TaskItem({ task, profiles, onEdit, isHighlighted, clientName }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [copied, setCopied] = useState(false)
   const profile = profiles.find(p => p.id === task.responsable_id)
   const status = task.status ?? (task.completed ? 'completed' : 'pending')
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending
@@ -45,8 +46,31 @@ function TaskItem({ task, profiles, onEdit }) {
 
   const badgeStyle = ROLE_BADGE_STYLES[task.responsable_rol] || 'bg-gray-50 text-gray-700 border-gray-200'
 
+  const handleShare = async () => {
+    const statusLabel = { pending: '⬜ Pending', in_progress: '🟡 In Progress', completed: '✅ Completed' }[status] || '—'
+    const lines = [
+      `📋 *Task: ${task.titulo}*`,
+      clientName ? `👤 Client: ${clientName}` : null,
+      `🔘 Status: ${statusLabel}`,
+      task.responsable_rol ? `👥 Role: ${task.responsable_rol}` : null,
+      task.fecha_limite ? `📅 Due: ${task.fecha_limite.split('T')[0]}` : null,
+      task.delivery_link ? `🔗 Delivery: ${task.delivery_link}` : null,
+    ].filter(Boolean).join('\n')
+
+    if (navigator.share) {
+      try { await navigator.share({ title: task.titulo, text: lines }) } catch {}
+    } else {
+      await navigator.clipboard.writeText(lines)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
   return (
-    <div className={`flex items-start justify-between p-4 bg-white hover:bg-gray-50 transition-all duration-200 group border-b border-gray-100 last:border-b-0 ${statusCfg.rowOpacity}`}>
+    <div
+      id={`task-${task.id}`}
+      className={`flex items-start justify-between p-4 bg-white hover:bg-gray-50 transition-all duration-200 group border-b border-gray-100 last:border-b-0 ${statusCfg.rowOpacity} ${isHighlighted ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+    >
       <div className="flex items-start flex-1 min-w-0 pr-4">
 
         {/* Priority dot */}
@@ -142,6 +166,18 @@ function TaskItem({ task, profiles, onEdit }) {
           </>
         ) : (
           <>
+            <button
+              onClick={handleShare}
+              className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all shadow-sm bg-white border border-transparent hover:border-blue-100 relative"
+              aria-label="Share task"
+            >
+              <Share2 className="w-4 h-4" />
+              {copied && (
+                <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white bg-gray-800 px-2 py-0.5 rounded whitespace-nowrap">
+                  Copied!
+                </span>
+              )}
+            </button>
             <button
               onClick={() => onEdit(task)}
               className="p-1.5 text-gray-400 hover:text-brand-primary rounded-lg hover:bg-brand-light transition-all shadow-sm bg-white border border-transparent hover:border-brand-light"
