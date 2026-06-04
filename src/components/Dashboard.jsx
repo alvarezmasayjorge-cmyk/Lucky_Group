@@ -8,7 +8,7 @@ import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
 import MatrixView from './MatrixView'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -72,9 +72,11 @@ export default function Dashboard({ user, profile }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
 
-  // Reset section filter when switching areas or clients
+  // Reset all filters when switching areas or clients
   useEffect(() => {
     setSelectedSeccion('all')
+    setSelectedRol('all')
+    setSelectedResponsable('all')
     setSearchQuery('')
     setCollapsedSections({})
     if (!activeClient) setActiveView('board')
@@ -114,13 +116,14 @@ export default function Dashboard({ user, profile }) {
       setLoading(true)
       setError(null)
       try {
-        await Promise.all([
-          runInitialMigrationAndSeed(user.uid),
-          runPatchV1(user.uid),
-          runResetToUserTasks(user.uid),
-          runPatchV4(user.uid),
-          runPatchV5(user.uid),
-        ])
+        // Patches must run sequentially — concurrent execution caused v3 to delete
+        // tasks that v4 was simultaneously creating, leaving new clients with no tasks.
+        await runInitialMigrationAndSeed(user.uid)
+        await runPatchV1(user.uid)
+        await runResetToUserTasks(user.uid)
+        await runPatchV4(user.uid)
+        await runPatchV5(user.uid)
+        await runPatchV6(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
@@ -725,7 +728,7 @@ export default function Dashboard({ user, profile }) {
                     ) : (
                       <div className="px-6 py-8 text-center bg-gray-50/30">
                         <p className="text-sm text-gray-400 font-medium">
-                          {searchQuery || hideCompleted
+                          {searchQuery || hideCompleted || selectedRol !== 'all' || selectedResponsable !== 'all'
                             ? 'No tasks match the current filters.'
                             : 'No tasks added to this section yet.'}
                         </p>
