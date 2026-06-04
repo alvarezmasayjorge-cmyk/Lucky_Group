@@ -433,6 +433,19 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
     [secciones, areaFilter]
   )
 
+  // When "all areas" is selected, interleave area-header markers between groups
+  const sectionItems = useMemo(() => {
+    if (areaFilter !== 'all') return visibleSections.map(s => ({ type: 'section', sec: s }))
+    const items = []
+    for (const area of AREAS) {
+      const group = visibleSections.filter(s => s.area === area.id)
+      if (group.length === 0) continue
+      items.push({ type: 'area-header', area })
+      group.forEach(s => items.push({ type: 'section', sec: s }))
+    }
+    return items
+  }, [visibleSections, areaFilter])
+
   // taskMap[clientId][sectionId] = [tasks...]
   const taskMap = useMemo(() => {
     const map = {}
@@ -581,6 +594,9 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
 
   const ROW_H = 40
   const SECTION_H = 36
+  const AREA_HEADER_H = 30
+
+  const AREA_COLORS = { meta_ads: '#1d4ed8', google_ads: '#d97706', ghl: '#059669' }
   const HEADER_H = window.innerWidth < 640 ? 150 : 180
   const PROCESS_COL_W = window.innerWidth < 640 ? 140 : 220
 
@@ -722,7 +738,23 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           onScroll={handleProcessScroll}
           style={{ overflowY: 'auto', overflowX: 'hidden', borderRight: '2px solid #e5e7eb' }}
         >
-          {visibleSections.map(sec => {
+          {sectionItems.map(item => {
+            if (item.type === 'area-header') {
+              return (
+                <div key={`area-${item.area.id}`} style={{
+                  height: AREA_HEADER_H, display: 'flex', alignItems: 'center',
+                  padding: '0 12px', gap: 6,
+                  background: AREA_COLORS[item.area.id],
+                  borderBottom: '2px solid rgba(0,0,0,0.15)',
+                }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    {item.area.name}
+                  </span>
+                </div>
+              )
+            }
+
+            const sec = item.sec
             const isOpen = collapsed[sec.id] !== true
             const tasks = sectionTasks[sec.id] || []
             return (
@@ -876,7 +908,23 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           style={{ overflowX: 'auto', overflowY: 'auto', willChange: 'scroll-position' }}
         >
           <div style={{ minWidth: clients.length * COL_MIN_W }}>
-            {visibleSections.map(sec => {
+            {sectionItems.map(item => {
+              if (item.type === 'area-header') {
+                return (
+                  <div key={`area-${item.area.id}`} style={{
+                    display: 'flex', height: AREA_HEADER_H,
+                    background: AREA_COLORS[item.area.id],
+                    minWidth: clients.length * COL_MIN_W,
+                    borderBottom: '2px solid rgba(0,0,0,0.15)',
+                  }}>
+                    {clients.map(client => (
+                      <div key={client.id} style={{ flex: '1 1 0', minWidth: COL_MIN_W, borderRight: '1px solid rgba(0,0,0,0.1)' }} />
+                    ))}
+                  </div>
+                )
+              }
+
+              const sec = item.sec
               const isOpen = collapsed[sec.id] !== true
               const tasks = sectionTasks[sec.id] || []
               return (

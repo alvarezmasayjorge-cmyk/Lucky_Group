@@ -122,10 +122,6 @@ export default function Dashboard({ user, profile }) {
           runPatchV5(user.uid),
         ])
 
-        const qSecciones = query(collection(db, 'checklist_sections'), orderBy('orden'))
-        const secSnap = await getDocs(qSecciones)
-        setSecciones(secSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
       } catch (err) {
@@ -148,9 +144,15 @@ export default function Dashboard({ user, profile }) {
       setAllTareas(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     }, (err) => console.error('Tasks listener error:', err))
 
+    const qSecciones = query(collection(db, 'checklist_sections'), orderBy('orden'))
+    const unsubSecciones = onSnapshot(qSecciones, (snap) => {
+      setSecciones(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    }, (err) => console.error('Sections listener error:', err))
+
     return () => {
       unsubClients()
       unsubTareas()
+      unsubSecciones()
     }
   }, [user.uid])
 
