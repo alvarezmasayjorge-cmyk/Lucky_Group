@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react'
 import { updateDoc, deleteDoc, doc, collection, addDoc, writeBatch, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2, Share2 } from 'lucide-react'
@@ -27,7 +27,7 @@ function isBlocker(task) {
 
 // ── Status Cell ────────────────────────────────────────────────────────────────
 
-function Cell({ task, isColHL, isRowHL, onHover, onLeave, onClick }) {
+const Cell = memo(function Cell({ task, isColHL, isRowHL, onHover, onLeave, onClick }) {
   if (!task) {
     return (
       <div
@@ -82,7 +82,7 @@ function Cell({ task, isColHL, isRowHL, onHover, onLeave, onClick }) {
       )}
     </div>
   )
-}
+})
 
 // ── Task Drawer ────────────────────────────────────────────────────────────────
 
@@ -491,16 +491,16 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
   )
 
   // Sync scrolls
-  const handleCellsScroll = (e) => {
+  const handleCellsScroll = useCallback((e) => {
     if (processColRef.current) processColRef.current.scrollTop = e.target.scrollTop
     if (clientsHeaderRef.current) clientsHeaderRef.current.scrollLeft = e.target.scrollLeft
-  }
-  const handleHeaderScroll = (e) => {
+  }, [])
+  const handleHeaderScroll = useCallback((e) => {
     if (cellsBodyRef.current) cellsBodyRef.current.scrollLeft = e.target.scrollLeft
-  }
-  const handleProcessScroll = (e) => {
+  }, [])
+  const handleProcessScroll = useCallback((e) => {
     if (cellsBodyRef.current) cellsBodyRef.current.scrollTop = e.target.scrollTop
-  }
+  }, [])
 
   const handleCellClick = (client, section, titulo) => {
     const task = (taskMap[client.id]?.[section.id] || []).find(t => t.titulo === titulo)
@@ -595,6 +595,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
+        .matrix-scroll { -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; }
         .matrix-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
         .matrix-scroll::-webkit-scrollbar-track { background: #f9fafb; }
         .matrix-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
@@ -872,7 +873,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           className="matrix-scroll"
           onScroll={handleCellsScroll}
           onMouseLeave={() => setTooltip(null)}
-          style={{ overflowX: 'auto', overflowY: 'auto' }}
+          style={{ overflowX: 'auto', overflowY: 'auto', willChange: 'scroll-position' }}
         >
           <div style={{ minWidth: clients.length * COL_MIN_W }}>
             {visibleSections.map(sec => {

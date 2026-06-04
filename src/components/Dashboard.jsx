@@ -114,11 +114,13 @@ export default function Dashboard({ user, profile }) {
       setLoading(true)
       setError(null)
       try {
-        await runInitialMigrationAndSeed(user.uid)
-      await runPatchV1(user.uid)
-      await runResetToUserTasks(user.uid)
-      await runPatchV4(user.uid)
-      await runPatchV5(user.uid)
+        await Promise.all([
+          runInitialMigrationAndSeed(user.uid),
+          runPatchV1(user.uid),
+          runResetToUserTasks(user.uid),
+          runPatchV4(user.uid),
+          runPatchV5(user.uid),
+        ])
 
         const qSecciones = query(collection(db, 'checklist_sections'), orderBy('orden'))
         const secSnap = await getDocs(qSecciones)
