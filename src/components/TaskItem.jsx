@@ -47,20 +47,13 @@ function TaskItem({ task, profiles, onEdit, isHighlighted, clientName }) {
   const badgeStyle = ROLE_BADGE_STYLES[task.responsable_rol] || 'bg-gray-50 text-gray-700 border-gray-200'
 
   const handleShare = async () => {
-    const statusLabel = { pending: '⬜ Pending', in_progress: '🟡 In Progress', completed: '✅ Completed' }[status] || '—'
-    const lines = [
-      `📋 *Task: ${task.titulo}*`,
-      clientName ? `👤 Client: ${clientName}` : null,
-      `🔘 Status: ${statusLabel}`,
-      task.responsable_rol ? `👥 Role: ${task.responsable_rol}` : null,
-      task.fecha_limite ? `📅 Due: ${task.fecha_limite.split('T')[0]}` : null,
-      task.delivery_link ? `🔗 Delivery: ${task.delivery_link}` : null,
-    ].filter(Boolean).join('\n')
+    const url = `${window.location.origin}${window.location.pathname}?task=${task.id}`
+    const text = `📋 ${task.titulo}${clientName ? ` — ${clientName}` : ''}`
 
     if (navigator.share) {
-      try { await navigator.share({ title: task.titulo, text: lines }) } catch {}
+      try { await navigator.share({ title: task.titulo, text, url }) } catch {}
     } else {
-      await navigator.clipboard.writeText(lines)
+      await navigator.clipboard.writeText(url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }

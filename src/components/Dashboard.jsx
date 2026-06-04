@@ -61,8 +61,12 @@ export default function Dashboard({ user, profile }) {
     })
   }, [])
 
-  // Highlight task (from matrix → board navigation)
+  // Highlight task (from matrix → board navigation or URL deep link)
   const [highlightTaskId, setHighlightTaskId] = useState(null)
+  const [pendingDeepLink, setPendingDeepLink] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('task')
+  })
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -76,7 +80,21 @@ export default function Dashboard({ user, profile }) {
     if (!activeClient) setActiveView('board')
   }, [activeArea, activeClient])
 
-  // Scroll to and highlight task when navigating from matrix
+  // Deep link: navigate to task from URL ?task=ID
+  useEffect(() => {
+    if (!pendingDeepLink || loading || clients.length === 0 || allTareas.length === 0 || secciones.length === 0) return
+    const task = allTareas.find(t => t.id === pendingDeepLink)
+    if (!task) { setPendingDeepLink(null); return }
+    const client = clients.find(c => c.id === task.client_id)
+    const section = secciones.find(s => s.id === task.seccion_id)
+    if (client) setActiveClient(client)
+    if (section) setActiveArea(section.area)
+    setHighlightTaskId(task.id)
+    setPendingDeepLink(null)
+    window.history.replaceState({}, '', window.location.pathname)
+  }, [pendingDeepLink, loading, clients, allTareas, secciones])
+
+  // Scroll to and highlight task
   useEffect(() => {
     if (!highlightTaskId) return
     const task = allTareas.find(t => t.id === highlightTaskId)

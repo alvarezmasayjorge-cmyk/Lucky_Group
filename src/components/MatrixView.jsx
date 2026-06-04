@@ -312,21 +312,12 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
         <div style={{ padding: '16px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             onClick={async () => {
-              const status = localStatus || getStatus(item.task)
-              const statusLabel = { pending: '⬜ Pending', in_progress: '🟡 In Progress', completed: '✅ Completed' }[status] || '—'
-              const lines = [
-                `📋 *Task: ${item.task.titulo}*`,
-                `👤 Client: ${item.client.name}`,
-                `📂 Section: ${item.section.nombre}`,
-                `🔘 Status: ${statusLabel}`,
-                item.task.responsable_rol ? `👥 Role: ${item.task.responsable_rol}` : null,
-                item.task.fecha_limite ? `📅 Due: ${item.task.fecha_limite.split('T')[0]}` : null,
-                item.task.delivery_link ? `🔗 Delivery: ${item.task.delivery_link}` : null,
-              ].filter(Boolean).join('\n')
+              const url = `${window.location.origin}${window.location.pathname}?task=${item.task.id}`
+              const text = `📋 ${item.task.titulo} — ${item.client.name}`
               if (navigator.share) {
-                try { await navigator.share({ title: item.task.titulo, text: lines }) } catch {}
+                try { await navigator.share({ title: item.task.titulo, text, url }) } catch {}
               } else {
-                await navigator.clipboard.writeText(lines)
+                await navigator.clipboard.writeText(url)
                 setCopied(true)
                 setTimeout(() => setCopied(false), 2000)
               }
