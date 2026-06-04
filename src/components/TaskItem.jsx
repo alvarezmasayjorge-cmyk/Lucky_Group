@@ -1,5 +1,5 @@
 import { memo, useState } from 'react'
-import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle, X } from 'lucide-react'
+import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle, X, Link2 } from 'lucide-react'
 import { db } from '../lib/firebase'
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG } from '../lib/constants'
@@ -103,6 +103,19 @@ function TaskItem({ task, profiles, onEdit }) {
                 {isOverdue && <AlertCircle className="w-3 h-3" />}
                 {task.fecha_limite.split('T')[0]}
               </span>
+            )}
+            {task.delivery_link && (
+              <a
+                href={task.delivery_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1 text-xs font-semibold text-brand-primary hover:text-brand-dark transition-colors"
+                title={task.delivery_link}
+              >
+                <Link2 className="w-3 h-3" />
+                View delivery
+              </a>
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { db } from '../lib/firebase'
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore'
-import { X, LayoutTemplate } from 'lucide-react'
+import { X, LayoutTemplate, Link2 } from 'lucide-react'
 import { ROLES, AREAS } from '../lib/constants'
 
 export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentActiveArea, activeClientId }) {
@@ -18,11 +18,13 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
   const [status, setStatus] = useState('pending')
   const [prioridad, setPrioridad] = useState('medium')
   const [fechaLimite, setFechaLimite] = useState('')
+  const [deliveryLink, setDeliveryLink] = useState('')
 
   useEffect(() => {
     if (task) {
       setTitulo(task.titulo || '')
       setDescripcion(task.descripcion || '')
+
       
       // Find the area of this task's section
       const taskSection = secciones.find(s => s.id === task.seccion_id)
@@ -35,6 +37,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
       setStatus(task.status ?? (task.completed ? 'completed' : 'pending'))
       setPrioridad(task.prioridad || 'medium')
       setFechaLimite(task.fecha_limite ? task.fecha_limite.split('T')[0] : '')
+      setDeliveryLink(task.delivery_link || '')
     } else {
       setArea(currentActiveArea || 'meta_ads')
       const initialSections = secciones.filter(s => s.area === (currentActiveArea || 'meta_ads'))
@@ -66,6 +69,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
       completed: status === 'completed',
       prioridad,
       fecha_limite: fechaLimite || null,
+      delivery_link: deliveryLink.trim() || null,
       actualizado_en: new Date().toISOString()
     }
 
@@ -247,13 +251,28 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
               </div>
 
               {/* Due Date */}
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Due Date</label>
                 <input
                   type="date"
                   value={fechaLimite}
                   onChange={(e) => setFechaLimite(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all bg-white shadow-sm font-medium text-gray-700"
+                />
+              </div>
+
+              {/* Delivery Link */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <Link2 className="w-3.5 h-3.5 text-gray-400" />
+                  Delivery Link
+                </label>
+                <input
+                  type="url"
+                  value={deliveryLink}
+                  onChange={(e) => setDeliveryLink(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all bg-white shadow-sm text-gray-700"
+                  placeholder="https://drive.google.com/..."
                 />
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { updateDoc, deleteDoc, doc, collection, addDoc, writeBatch, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus } from 'lucide-react'
+import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2 } from 'lucide-react'
 import { AREAS } from '../lib/constants'
 
 const COL_MIN_W = 60
@@ -271,6 +271,28 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
               {AREAS.find(a => a.id === item.section.area)?.name || item.section.area}
             </div>
           </div>
+
+          {/* Delivery Link */}
+          {item.task.delivery_link && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Delivery Link
+              </label>
+              <a
+                href={item.task.delivery_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 13, fontWeight: 600, color: '#2E7D32',
+                  textDecoration: 'none', wordBreak: 'break-all',
+                }}
+              >
+                <Link2 style={{ width: 13, height: 13, flexShrink: 0 }} />
+                {item.task.delivery_link}
+              </a>
+            </div>
+          )}
 
           {/* Last Updated */}
           {item.task.actualizado_en && (
