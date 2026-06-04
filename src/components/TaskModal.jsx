@@ -6,7 +6,8 @@ import { ROLES, AREAS } from '../lib/constants'
 
 export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentActiveArea, activeClientId }) {
   const [loading, setLoading] = useState(false)
-  
+  const [error, setError] = useState('')
+
   // States for form fields
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
@@ -53,6 +54,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
 
     const payload = {
       titulo,
@@ -82,7 +84,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
       onClose()
     } catch (error) {
       console.error('Error saving task:', error.message)
-      alert('There was an error saving the task.')
+      setError('There was an error saving the task. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -113,6 +115,11 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
 
         {/* Form Body */}
         <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-sm font-medium border border-red-100">
+              {error}
+            </div>
+          )}
           <form id="task-form" onSubmit={handleSubmit} className="space-y-6">
             
             {/* Title */}

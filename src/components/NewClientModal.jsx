@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Building2, Loader2 } from 'lucide-react'
 
-export default function NewClientModal({ isOpen, onClose, onConfirm, isLoading }) {
+export default function NewClientModal({ isOpen, onClose, onConfirm, isLoading, errorMessage }) {
   const [name, setName] = useState('')
   const inputRef = useRef(null)
 
@@ -50,6 +50,11 @@ export default function NewClientModal({ isOpen, onClose, onConfirm, isLoading }
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {errorMessage && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium border border-red-100">
+              {errorMessage}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Client Name <span className="text-red-500">*</span>

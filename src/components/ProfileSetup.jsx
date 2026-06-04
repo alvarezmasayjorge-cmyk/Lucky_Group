@@ -1,14 +1,7 @@
 import { useState } from 'react'
 import { db } from '../lib/firebase'
 import { doc, setDoc } from 'firebase/firestore'
-
-const ROLES = [
-  'Client',
-  'Media Buyer',
-  'Funneler',
-  'Video Editor',
-  'Graphic Designer'
-]
+import { ROLES } from '../lib/constants'
 
 export default function ProfileSetup({ user, onProfileUpdated }) {
   const [loading, setLoading] = useState(false)
@@ -38,7 +31,7 @@ export default function ProfileSetup({ user, onProfileUpdated }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-light p-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+      <div className="bg-white p-5 sm:p-8 rounded-xl shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-brand-dark mb-6 text-center">Complete your Profile</h2>
         <p className="text-gray-600 text-sm mb-6 text-center">
           To collaborate with the Lucky Consultation Group team, we need to know who you are.

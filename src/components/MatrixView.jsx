@@ -126,7 +126,7 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.15)', zIndex: 400, backdropFilter: 'blur(1px)' }}
       />
       <div style={{
-        position: 'fixed', top: 0, right: 0, height: '100vh', width: 320,
+        position: 'fixed', top: 0, right: 0, height: '100vh', width: 'min(320px, 92vw)',
         background: 'white', borderLeft: '1px solid #e5e7eb',
         boxShadow: '-8px 0 32px rgba(0,0,0,0.12)',
         zIndex: 500, display: 'flex', flexDirection: 'column',

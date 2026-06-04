@@ -1,7 +1,7 @@
 import { Filter, Search, EyeOff } from 'lucide-react'
 import { ROLES } from '../lib/constants'
 
-const selectClass = 'text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-primary outline-none bg-white text-gray-700 min-w-[140px]'
+const selectClass = 'text-sm px-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-primary outline-none bg-white text-gray-700 w-full sm:min-w-[130px] sm:w-auto'
 
 export default function FilterBar({
   secciones,
@@ -18,7 +18,7 @@ export default function FilterBar({
   setHideCompleted,
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
       <div className="flex items-center text-gray-500 mr-1">
         <Filter className="w-4 h-4 mr-1" />
         <span className="text-sm font-medium hidden sm:inline">Filters:</span>
@@ -32,7 +32,7 @@ export default function FilterBar({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search tasks…"
-          className="text-sm pl-8 pr-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-primary outline-none bg-white text-gray-700 w-36"
+          className="text-sm pl-8 pr-3 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-brand-primary outline-none bg-white text-gray-700 w-full sm:w-36"
         />
       </div>
 

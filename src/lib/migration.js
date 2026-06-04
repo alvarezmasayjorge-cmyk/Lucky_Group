@@ -75,7 +75,6 @@ export const runPatchV1 = async (userId) => {
   const patchSnap = await getDoc(patchRef)
   if (patchSnap.exists()) return // already applied
 
-  console.log('Running patch v1: adding missing tasks...')
 
   const [clientsSnap, sectionsSnap, tasksSnap] = await Promise.all([
     getDocs(collection(db, 'clients')),
@@ -109,7 +108,7 @@ export const runPatchV1 = async (userId) => {
       if (existingKeys.has(finalKey)) continue
 
       const section = sections.find(s => s.nombre === task.sectionName)
-      if (!section) { console.warn(`Section not found: ${task.sectionName}`); continue }
+      if (!section) { continue }
 
       // If renameFrom exists and the old title is present, update it instead of creating
       if (task.renameFrom) {
@@ -146,7 +145,6 @@ export const runPatchV1 = async (userId) => {
   // Mark patch as applied
   batch.set(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
   await batch.commit()
-  console.log(`Patch v1 applied: ${count} tasks added.`)
 }
 
 const CLIENT_UPDATES = {
@@ -240,7 +238,6 @@ export const runInitialMigrationAndSeed = async (userId) => {
     return false; // Already seeded
   }
 
-  console.log("Running Multi-Client Master Seed...");
   
   // First, let's create the 13 universal template sections. 
   // Wait, if sections are global, we only need to create them ONCE.
@@ -332,7 +329,6 @@ export const runInitialMigrationAndSeed = async (userId) => {
   });
 
   await batch.commit();
-  console.log("Migration successful!");
   return true;
 }
 
@@ -405,7 +401,6 @@ export const runResetToUserTasks = async (userId) => {
   const patchSnap = await getDoc(patchRef)
   if (patchSnap.exists()) return
 
-  console.log('Running reset: deleting all tasks and re-seeding from user list...')
 
   const [clientsSnap, sectionsSnap, allTasksSnap] = await Promise.all([
     getDocs(collection(db, 'clients')),
@@ -435,7 +430,7 @@ export const runResetToUserTasks = async (userId) => {
 
     for (const task of taskList) {
       const section = sections.find(s => s.nombre === task.sectionName)
-      if (!section) { console.warn(`Section not found: ${task.sectionName}`); continue }
+      if (!section) { continue }
 
       const taskRef = doc(collection(db, 'checklist_tasks'))
       createBatch.set(taskRef, {
@@ -457,7 +452,6 @@ export const runResetToUserTasks = async (userId) => {
 
   createBatch.set(patchRef, { applied_at: now, applied_by: userId, tasks_created: count })
   await createBatch.commit()
-  console.log(`Reset complete: ${count} tasks created.`)
 }
 
 // ─── PATCH V4: rename clients, add missing clients, seed Google Ads tasks ────
@@ -508,7 +502,6 @@ export const runPatchV4 = async (userId) => {
   const patchSnap = await getDoc(patchRef)
   if (patchSnap.exists()) return
 
-  console.log('Running patch v4: rename clients, add new clients, seed Google Ads...')
 
   const [clientsSnap, sectionsSnap] = await Promise.all([
     getDocs(collection(db, 'clients')),
@@ -530,7 +523,6 @@ export const runPatchV4 = async (userId) => {
     }
   }
   await renameBatch.commit()
-  console.log(`Renamed ${count} clients.`)
 
   // --- b) Ensure "Google Ads" section exists ---
   let googleAdsSection = sections.find(s => s.nombre === 'Google Ads')
@@ -545,7 +537,6 @@ export const runPatchV4 = async (userId) => {
     })
     googleAdsSection = { id: secRef.id, nombre: 'Google Ads', area: 'google_ads' }
     sections = [...sections, googleAdsSection]
-    console.log('Created "Google Ads" section.')
   }
 
   // --- c) Create new clients with template tasks + Google Ads ---
@@ -589,7 +580,6 @@ export const runPatchV4 = async (userId) => {
 
     await batch.commit()
   }
-  console.log(`Created ${newClientIds.length} new clients with template tasks.`)
 
   // --- d) Seed Google Ads tasks for ALL existing clients ---
   // Re-fetch clients to include newly created ones
@@ -639,7 +629,6 @@ export const runPatchV4 = async (userId) => {
 
   // Mark patch as applied
   await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_renamed: count, clients_created: newClientIds.length, google_ads_tasks: gaCount })
-  console.log(`Patch v4 done: ${gaCount} Google Ads tasks created.`)
 }
 
 // ─── PATCH V5: redistribute Google Ads tasks into 3 sections ────────────────
@@ -662,7 +651,6 @@ export const runPatchV5 = async (userId) => {
   const patchSnap = await getDoc(patchRef)
   if (patchSnap.exists()) return
 
-  console.log('Running patch v5: redistribute Google Ads tasks...')
 
   const [sectionsSnap, tasksSnap] = await Promise.all([
     getDocs(collection(db, 'checklist_sections')),
@@ -672,7 +660,6 @@ export const runPatchV5 = async (userId) => {
   const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
   const googleAdsSection = sections.find(s => s.nombre === 'Google Ads')
   if (!googleAdsSection) {
-    console.log('No "Google Ads" section found, skipping.')
     await setDoc(patchRef, { applied_at: new Date().toISOString(), applied_by: userId, skipped: true })
     return
   }
@@ -701,7 +688,6 @@ export const runPatchV5 = async (userId) => {
   await deleteDoc(doc(db, 'checklist_sections', googleAdsSection.id))
 
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_moved: count })
-  console.log(`Patch v5 done: ${count} tasks redistributed, "Google Ads" section deleted.`)
 }
 
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {

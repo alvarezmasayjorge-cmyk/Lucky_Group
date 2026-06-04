@@ -43,7 +43,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-light p-4 font-sans">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+      <div className="bg-white p-5 sm:p-8 rounded-xl shadow-lg w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-brand-dark mb-2">Lucky Consultation Group</h1>
           <p className="text-gray-500">Team Task Manager</p>

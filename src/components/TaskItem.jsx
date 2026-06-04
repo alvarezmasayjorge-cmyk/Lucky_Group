@@ -1,5 +1,5 @@
-import { memo } from 'react'
-import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle } from 'lucide-react'
+import { memo, useState } from 'react'
+import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle, X } from 'lucide-react'
 import { db } from '../lib/firebase'
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG } from '../lib/constants'
@@ -11,6 +11,7 @@ function StatusIcon({ status }) {
 }
 
 function TaskItem({ task, profiles, onEdit }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const profile = profiles.find(p => p.id === task.responsable_id)
   const status = task.status ?? (task.completed ? 'completed' : 'pending')
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending
@@ -34,12 +35,11 @@ function TaskItem({ task, profiles, onEdit }) {
   }
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await deleteDoc(doc(db, 'checklist_tasks', task.id))
-      } catch (err) {
-        console.error('Error deleting task:', err)
-      }
+    try {
+      await deleteDoc(doc(db, 'checklist_tasks', task.id))
+    } catch (err) {
+      console.error('Error deleting task:', err)
+      setConfirmDelete(false)
     }
   }
 
@@ -110,20 +110,41 @@ function TaskItem({ task, profiles, onEdit }) {
 
       {/* Actions */}
       <div className="flex items-center space-x-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={() => onEdit(task)}
-          className="p-1.5 text-gray-400 hover:text-brand-primary rounded-lg hover:bg-brand-light transition-all shadow-sm bg-white border border-transparent hover:border-brand-light"
-          aria-label="Edit task"
-        >
-          <Edit2 className="w-4 h-4" />
-        </button>
-        <button
-          onClick={handleDelete}
-          className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-all shadow-sm bg-white border border-transparent hover:border-red-100"
-          aria-label="Delete task"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {confirmDelete ? (
+          <>
+            <button
+              onClick={handleDelete}
+              className="px-2 py-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all shadow-sm"
+              aria-label="Confirm delete"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all"
+              aria-label="Cancel delete"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => onEdit(task)}
+              className="p-1.5 text-gray-400 hover:text-brand-primary rounded-lg hover:bg-brand-light transition-all shadow-sm bg-white border border-transparent hover:border-brand-light"
+              aria-label="Edit task"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-all shadow-sm bg-white border border-transparent hover:border-red-100"
+              aria-label="Delete task"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

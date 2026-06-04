@@ -26,6 +26,7 @@ export default function Dashboard({ user, profile }) {
   const [error, setError] = useState(null)
   const [isCreatingClient, setIsCreatingClient] = useState(false)
   const [showNewClientModal, setShowNewClientModal] = useState(false)
+  const [clientError, setClientError] = useState('')
 
   // Navigation
   const [activeClient, setActiveClient] = useState(null)
@@ -121,13 +122,14 @@ export default function Dashboard({ user, profile }) {
 
   const handleCreateClient = useCallback(async (name) => {
     setIsCreatingClient(true)
+    setClientError('')
     try {
       const newClient = await createNewClientWithTemplate(name, user.uid, secciones)
       setShowNewClientModal(false)
       setActiveClient(newClient)
     } catch (e) {
       console.error(e)
-      alert('Error creating client. Please try again.')
+      setClientError('Error creating client. Please try again.')
     } finally {
       setIsCreatingClient(false)
     }
@@ -254,7 +256,7 @@ export default function Dashboard({ user, profile }) {
         </header>
 
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-end mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
             <div>
               <h2 className="text-2xl font-black text-gray-900 flex items-center">
                 <Users className="w-6 h-6 mr-2 text-brand-primary" />
@@ -304,7 +306,8 @@ export default function Dashboard({ user, profile }) {
             />
           ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[560px]">
               <thead>
                 <tr className="bg-gray-50/50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500">
                   <th className="px-6 py-4 font-bold">Client Name</th>
@@ -363,15 +366,17 @@ export default function Dashboard({ user, profile }) {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
           )}
         </main>
 
         <NewClientModal
           isOpen={showNewClientModal}
-          onClose={() => setShowNewClientModal(false)}
+          onClose={() => { setShowNewClientModal(false); setClientError('') }}
           onConfirm={handleCreateClient}
           isLoading={isCreatingClient}
+          errorMessage={clientError}
         />
       </div>
     )

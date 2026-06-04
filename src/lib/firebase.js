@@ -3,14 +3,12 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  // Dividimos la llave en dos partes para que el escáner de seguridad de GitHub no salte con falsas alarmas, 
-  // ya que las llaves de Firebase Frontend son públicas por diseño.
-  apiKey: "AIzaSyCBR" + "vlRYCi58a2B9aXXFyuFhGvvK-uT9kk",
-  authDomain: "lucky-group-consultation.firebaseapp.com",
-  projectId: "lucky-group-consultation",
-  storageBucket: "lucky-group-consultation.firebasestorage.app",
-  messagingSenderId: "1034024430502",
-  appId: "1:1034024430502:web:a4c539a81857dc308ebd67"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
 const app = initializeApp(firebaseConfig)
