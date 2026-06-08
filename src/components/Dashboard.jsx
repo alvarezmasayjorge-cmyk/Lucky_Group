@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
-import { collection, query, onSnapshot, getDocs, orderBy } from 'firebase/firestore'
+import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
 import MatrixView from './MatrixView'
+import BudgetsView from './BudgetsView'
 import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
@@ -179,6 +180,17 @@ export default function Dashboard({ user, profile }) {
     }
   }, [user.uid, secciones])
 
+  const handleSaveBudget = useCallback(async (clientId, fields) => {
+    try {
+      await updateDoc(doc(db, 'clients', clientId), {
+        ...fields,
+        actualizado_en: new Date().toISOString(),
+      })
+    } catch (e) {
+      console.error('Error saving budget:', e)
+    }
+  }, [])
+
   const handleOpenEdit = useCallback((task) => {
     setEditingTask(task)
     setIsModalOpen(true)
@@ -329,6 +341,13 @@ export default function Dashboard({ user, profile }) {
                   <LayoutGrid className="w-3.5 h-3.5" />
                   Matrix
                 </button>
+                <button
+                  onClick={() => setMasterView('budgets')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${masterView === 'budgets' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  Budgets
+                </button>
               </div>
               <button
                 onClick={() => setShowNewClientModal(true)}
@@ -354,6 +373,8 @@ export default function Dashboard({ user, profile }) {
                 if (taskId) setHighlightTaskId(taskId)
               }}
             />
+          ) : masterView === 'budgets' ? (
+            <BudgetsView clients={clients} onSaveBudget={handleSaveBudget} />
           ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
