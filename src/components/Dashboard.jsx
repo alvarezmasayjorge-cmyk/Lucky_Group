@@ -9,7 +9,7 @@ import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
 import MatrixView from './MatrixView'
 import BudgetsView from './BudgetsView'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -126,6 +126,7 @@ export default function Dashboard({ user, profile }) {
         await runPatchV5(user.uid)
         await runPatchV6(user.uid)
         await runPatchV7(user.uid)
+        await runPatchV8(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))

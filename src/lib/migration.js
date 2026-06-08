@@ -823,6 +823,83 @@ export const runPatchV7 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
 }
 
+// ─── PATCH V8: seed GHL tasks for all clients ────────────────────────────────
+
+export const runPatchV8 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v8_ghl_tasks')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const [clientsSnap, sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  let sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  // Ensure "4. AI RECEPTIONIST" section exists
+  let aiRecepSection = sections.find(s => s.nombre === '4. AI RECEPTIONIST')
+  if (!aiRecepSection) {
+    const maxOrden = Math.max(...sections.filter(s => s.area === 'ghl').map(s => s.orden || 0), 0)
+    const secRef = doc(collection(db, 'checklist_sections'))
+    await setDoc(secRef, {
+      nombre: '4. AI RECEPTIONIST',
+      area: 'ghl',
+      orden: maxOrden + 1,
+      creado_en: now,
+    })
+    aiRecepSection = { id: secRef.id, nombre: '4. AI RECEPTIONIST', area: 'ghl' }
+    sections = [...sections, aiRecepSection]
+  }
+
+  // Build dedup set: clientId|sectionId|titulo
+  const existingKeys = new Set(
+    tasksSnap.docs.map(d => {
+      const t = d.data()
+      return `${t.client_id}|${t.seccion_id}|${t.titulo}`
+    })
+  )
+
+  let count = 0
+
+  for (let i = 0; i < clients.length; i += 4) {
+    const chunk = clients.slice(i, i + 4)
+    const batch = writeBatch(db)
+
+    for (const client of chunk) {
+      for (const tpl of TEMPLATE_TASKS) {
+        const sec = sections.find(s => s.nombre === tpl.sectionName)
+        if (!sec || sec.area !== 'ghl') continue
+        const key = `${client.id}|${sec.id}|${tpl.title}`
+        if (existingKeys.has(key)) continue
+
+        const taskRef = doc(collection(db, 'checklist_tasks'))
+        batch.set(taskRef, {
+          titulo: tpl.title,
+          responsable_rol: tpl.role,
+          seccion_id: sec.id,
+          client_id: client.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'medium',
+          responsable_id: null,
+          creado_por: userId,
+          creado_en: now,
+          actualizado_en: now,
+        })
+        count++
+      }
+    }
+
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

@@ -11,7 +11,8 @@ export const TEMPLATE_SECTIONS = [
   { name: '3. TRACKING & CONVERSIONS', area: 'google_ads' },
   { name: '1. ACCOUNT CONFIGURATION', area: 'ghl' },
   { name: '2. FUNNEL CREATION', area: 'ghl' },
-  { name: '3. AUTOMATION & WORKFLOWS', area: 'ghl' }
+  { name: '3. AUTOMATION & WORKFLOWS', area: 'ghl' },
+  { name: '4. AI RECEPTIONIST', area: 'ghl' }
 ];
 
 export const TEMPLATE_TASKS = [
@@ -94,4 +95,40 @@ export const TEMPLATE_TASKS = [
   // 3. TRACKING & CONVERSIONS
   { sectionName: '3. TRACKING & CONVERSIONS', title: 'Map GHL Conv. > Google Ads', role: 'Media Buyer' },
   { sectionName: '3. TRACKING & CONVERSIONS', title: 'Create Conv. Actions', role: 'Media Buyer' },
+
+  // 1. ACCOUNT CONFIGURATION (GHL)
+  { sectionName: '1. ACCOUNT CONFIGURATION', title: 'Integration (Google)', role: 'Client' },
+  { sectionName: '1. ACCOUNT CONFIGURATION', title: 'Integration (Meta)', role: 'Funneler' },
+  { sectionName: '1. ACCOUNT CONFIGURATION', title: 'Integrate Domain', role: 'Funneler' },
+  { sectionName: '1. ACCOUNT CONFIGURATION', title: 'Set and Validate Dedicated Sending Domain', role: 'Funneler' },
+  { sectionName: '1. ACCOUNT CONFIGURATION', title: 'A2P Application', role: 'Client' },
+  { sectionName: '1. ACCOUNT CONFIGURATION', title: 'Google Lead Event Creation', role: 'Media Buyer' },
+
+  // 2. FUNNEL CREATION (GHL)
+  { sectionName: '2. FUNNEL CREATION', title: 'Build Funnel', role: 'Funneler' },
+  { sectionName: '2. FUNNEL CREATION', title: 'Gather Client Assets', role: 'Client' },
+  { sectionName: '2. FUNNEL CREATION', title: 'Purchase Lookalike Domain', role: 'Client' },
+  { sectionName: '2. FUNNEL CREATION', title: 'Define Client Offer', role: 'Client' },
+  { sectionName: '2. FUNNEL CREATION', title: 'Tracking Code Installation', role: 'Funneler' },
+
+  // 3. AUTOMATION & WORKFLOWS (GHL)
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'CAPI Conversion', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Google Number Pool Conversion', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'New Lead Optin - Did Not Schedule', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Booked Appointment Reminder', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'No Show/Cancelled Appointment Win-back', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Pipeline Changed To No Show/Cancelled', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Lead to AI Outbound Call', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Get and Place Call: Outbound + Inbound', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Reactivation Call: Stale Customer', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Lead Type Updater & Aging', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Inbound Message Internal Notification', role: 'Funneler' },
+  { sectionName: '3. AUTOMATION & WORKFLOWS', title: 'Missed Call Text Back', role: 'Funneler' },
+
+  // 4. AI RECEPTIONIST (GHL)
+  { sectionName: '4. AI RECEPTIONIST', title: 'Prompt', role: 'Funneler' },
+  { sectionName: '4. AI RECEPTIONIST', title: 'AI Receptionist Objective', role: 'Funneler' },
+  { sectionName: '4. AI RECEPTIONIST', title: 'Retell Workspace', role: 'Client' },
+  { sectionName: '4. AI RECEPTIONIST', title: 'Add Client Payment Method', role: 'Client' },
+  { sectionName: '4. AI RECEPTIONIST', title: 'Purchase Number', role: 'Funneler' },
 ];
