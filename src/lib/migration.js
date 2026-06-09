@@ -1207,6 +1207,99 @@ export const runPatchV12 = async (userId) => {
   })
 }
 
+// ─── PATCH V13: set client services + create Main Street Chiropractic ────────
+export const runPatchV13 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v13_client_services')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const now = new Date().toISOString()
+
+  // Services data from the Project Tracker image
+  // Order: lsa, google_ads, facebook_ads, ai_receptionist, seo, website_built
+  const SVC = {
+    'Bloomfield Construction & Restoration': [1,1,1,1,1,0],
+    'Prime Tree Care':                       [1,1,1,0,1,0],
+    'All Around Asphalt':                    [0,0,0,0,0,0],
+    'Parkway Paving':                        [1,1,1,0,1,0],
+    'All Dry Services of North Las Vegas':   [0,0,0,0,1,0],
+    'DNA Honest Plumbing':                   [1,1,1,0,1,0],
+    'Pagac & Company, P.C.':                 [1,1,1,0,0,0],
+    'Agnew Family Wellness':                 [1,1,1,1,1,0],
+    'Grass Lake Chiropractic Center':        [0,0,1,0,0,0],
+    'Delta Chiropractic':                    [0,1,1,0,0,0],
+    'Eckert Chiropractic, P.C.':             [0,0,1,1,0,0],
+    'Green Z Remodeling':                    [0,0,0,0,0,0],
+    'First Choice Chiropractic & Medical Center': [0,0,0,1,0,0],
+    'Mesa Chiropractic Rehab and Wellness':  [1,1,1,1,0,1],
+    'Moore Chiropractic':                    [1,1,1,0,1,0],
+    'Wonders of Chiropractic':               [1,1,1,0,1,0],
+    'The Family Wellness Center':            [1,1,1,0,0,0],
+    'Colorado Pro Health Rehab Kids & Adults': [1,0,0,1,0,0],
+    'HealthSource Chiropractic of Marlboro': [1,1,0,1,0,0],
+    'Ideal Physical Therapy and Fitness':    [1,1,1,0,1,1],
+    'Pure Seoul Aesthetics':                 [1,1,1,0,1,1],
+    'Age Reversal Technology Center':        [0,1,0,1,0,0],
+    'Main Street Chiropractic':              [0,1,0,0,0,0],
+  }
+
+  const keys = ['lsa','google_ads','facebook_ads','ai_receptionist','seo','website_built']
+
+  const clientsSnap = await getDocs(collection(db, 'clients'))
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const existingNames = new Set(clients.map(c => c.name))
+
+  // Create Main Street Chiropractic if missing
+  if (!existingNames.has('Main Street Chiropractic')) {
+    const clientRef = doc(collection(db, 'clients'))
+    await setDoc(clientRef, {
+      name: 'Main Street Chiropractic',
+      status: 'Active',
+      creado_en: now,
+      creado_por: userId,
+      platform_budgets: { lsa:{allocated:0,spent:0}, google_ads:{allocated:0,spent:0}, facebook_ads:{allocated:0,spent:0}, ai_receptionist:{allocated:0,spent:0}, seo:{allocated:0,spent:0}, website_built:{allocated:0,spent:0} },
+      budget_allocated: 0, budget_spent: 0, budget_currency: 'USD',
+      services: { lsa:false, google_ads:true, facebook_ads:false, ai_receptionist:false, seo:false, website_built:false },
+    })
+    // Seed template tasks for new client
+    const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+    const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    const batch = writeBatch(db)
+    for (const tpl of TEMPLATE_TASKS) {
+      const sec = sections.find(s => s.nombre === tpl.sectionName)
+      if (!sec) continue
+      const taskRef = doc(collection(db, 'checklist_tasks'))
+      batch.set(taskRef, {
+        titulo: tpl.title, responsable_rol: tpl.role, seccion_id: sec.id,
+        client_id: clientRef.id, status: 'pending', completed: false,
+        prioridad: 'low', responsable_id: null, creado_por: userId,
+        creado_en: now, actualizado_en: now,
+      })
+    }
+    await batch.commit()
+  }
+
+  // Re-fetch all clients (including newly created)
+  const allClientsSnap = await getDocs(collection(db, 'clients'))
+  const allClients = allClientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  let count = 0
+  for (let i = 0; i < allClients.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const client of allClients.slice(i, i + 400)) {
+      const arr = SVC[client.name]
+      if (!arr) continue
+      const services = {}
+      keys.forEach((k, idx) => { services[k] = !!arr[idx] })
+      batch.update(doc(db, 'clients', client.id), { services, actualizado_en: now })
+      count++
+    }
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_updated: count })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
