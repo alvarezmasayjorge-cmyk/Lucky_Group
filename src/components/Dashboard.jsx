@@ -2,14 +2,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3 } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
 import NewClientModal from './NewClientModal'
 import MatrixView from './MatrixView'
 import BudgetsView from './BudgetsView'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8 } from '../lib/migration'
+import ServicesView from './ServicesView'
+import NotificationBell from './NotificationBell'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -127,6 +129,9 @@ export default function Dashboard({ user, profile }) {
         await runPatchV6(user.uid)
         await runPatchV7(user.uid)
         await runPatchV8(user.uid)
+        await runPatchV9(user.uid)
+        await runPatchV10(user.uid)
+        await runPatchV11(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
@@ -190,6 +195,24 @@ export default function Dashboard({ user, profile }) {
     } catch (e) {
       console.error('Error saving budget:', e)
     }
+  }, [])
+
+  const handleToggleService = useCallback(async (clientId, platformId, currentValue) => {
+    try {
+      await updateDoc(doc(db, 'clients', clientId), {
+        [`services.${platformId}`]: !currentValue,
+        actualizado_en: new Date().toISOString(),
+      })
+    } catch (e) {
+      console.error('Error toggling service:', e)
+    }
+  }, [])
+
+  const handleNavigateToTask = useCallback((client, task, section) => {
+    setActiveClient(client)
+    setActiveArea(section?.area || 'meta_ads')
+    setHighlightTaskId(task.id)
+    setActiveView('board')
   }, [])
 
   const handleOpenEdit = useCallback((task) => {
@@ -305,6 +328,12 @@ export default function Dashboard({ user, profile }) {
             </div>
             <div className="flex items-center space-x-3">
               <span className="text-sm font-medium text-gray-600 hidden sm:block">{profile.nombre_completo}</span>
+              <NotificationBell
+                allTareas={allTareas}
+                clients={clients}
+                secciones={secciones}
+                onNavigate={handleNavigateToTask}
+              />
               <button
                 onClick={handleSignOut}
                 className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 rounded-lg transition-all shadow-sm border border-gray-200"
@@ -349,6 +378,13 @@ export default function Dashboard({ user, profile }) {
                   <Wallet className="w-3.5 h-3.5" />
                   Budgets
                 </button>
+                <button
+                  onClick={() => setMasterView('services')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${masterView === 'services' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  <Grid3x3 className="w-3.5 h-3.5" />
+                  Services
+                </button>
               </div>
               <button
                 onClick={() => setShowNewClientModal(true)}
@@ -376,6 +412,8 @@ export default function Dashboard({ user, profile }) {
             />
           ) : masterView === 'budgets' ? (
             <BudgetsView clients={clients} onSaveBudget={handleSaveBudget} />
+          ) : masterView === 'services' ? (
+            <ServicesView clients={clients} onToggleService={handleToggleService} />
           ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
@@ -480,6 +518,12 @@ export default function Dashboard({ user, profile }) {
               <p className="font-bold text-gray-900">{profile.nombre_completo}</p>
               <p className="text-gray-500 font-medium text-xs bg-gray-100 inline-block px-2 py-0.5 rounded-full mt-0.5">{profile.rol_equipo}</p>
             </div>
+            <NotificationBell
+              allTareas={allTareas}
+              clients={clients}
+              secciones={secciones}
+              onNavigate={handleNavigateToTask}
+            />
             <button
               onClick={handleSignOut}
               className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 rounded-lg transition-all shadow-sm border border-gray-200"
@@ -529,7 +573,7 @@ export default function Dashboard({ user, profile }) {
 
         {/* ── TEAM VIEW ── */}
         {activeView === 'team' && (() => {
-          const ROLES_ORDER = ['Media Buyer', 'Funneler', 'Video Editor', 'Graphic Designer', 'Client']
+          const ROLES_ORDER = ['Video Editor/Meta Specialist', 'Google Specialist', 'GoHighLevel Specialist', 'Project Manager', 'CEO']
           // Use ALL tasks across all clients
           const inProgressAll = allTareas.filter(t => getTaskStatus(t) === 'in_progress')
           const pendingAll    = allTareas.filter(t => getTaskStatus(t) === 'pending')

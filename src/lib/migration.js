@@ -5,68 +5,68 @@ import { TEMPLATE_SECTIONS, TEMPLATE_TASKS } from './templateTasks'
 // Tasks to patch into existing clients (added after initial seeding)
 const PATCH_V1 = {
   'AGNEW': [
-    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'GoHighLevel Specialist',      completed: false },
   ],
   'BLOOMFIELD': [
-    { titulo: 'Waiting for Raw Videos', sectionName: '5. VIDEO AD MATERIALS (Client Must Provide)', responsable_rol: 'Client', completed: false },
+    { titulo: 'Waiting for Raw Videos', sectionName: '5. VIDEO AD MATERIALS (Client Must Provide)', responsable_rol: 'Project Manager', completed: false },
   ],
   'GRASS LAKE': [
-    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'GoHighLevel Specialist',      completed: false },
   ],
   'DELTA': [
-    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
-    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
   ],
   'ECKERT': [
-    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
-    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
   ],
   'MOORE': [
-    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
-    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create New Landing Page (@Julius)',       sectionName: '4. LANDING PAGE',      responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',              sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Create Doctor Video — Long (@Jorge)',     sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',    sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)', sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
   ],
   'MESA': [
-    { titulo: 'Create New Landing Page (@Julius)',              sectionName: '4. LANDING PAGE',      responsable_rol: 'Funneler',      completed: false },
-    { titulo: 'Set Up New Pixel (@Julius)',                     sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'Funneler',      completed: false },
+    { titulo: 'Create New Landing Page (@Julius)',              sectionName: '4. LANDING PAGE',      responsable_rol: 'GoHighLevel Specialist',      completed: false },
+    { titulo: 'Set Up New Pixel (@Julius)',                     sectionName: '3. PIXEL & TRACKING',  responsable_rol: 'GoHighLevel Specialist',      completed: false },
     {
       titulo: '[In Progress] Create Doctor Video — Long (@Jorge)',
       renameFrom: 'Create Doctor Video — Long (@Jorge)',
-      sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false,
+      sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false,
     },
-    { titulo: 'Create Doctor Video — Short (@Jorge)',           sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: false },
-    { titulo: 'Create Short Videos (new offer) (@Jorge)',       sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
-    { titulo: 'Create UGC Videos (new offer) (@Jorge)',         sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor', completed: true  },
+    { titulo: 'Create Doctor Video — Short (@Jorge)',           sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: false },
+    { titulo: 'Create Short Videos (new offer) (@Jorge)',       sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
+    { titulo: 'Create UGC Videos (new offer) (@Jorge)',         sectionName: '6. VIDEO AD CREATION', responsable_rol: 'Video Editor/Meta Specialist', completed: true  },
   ],
   'PURE SEOUL': [
-    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Client', completed: false },
+    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Project Manager', completed: false },
   ],
   'NAPLES IDEAL FITNESS': [
-    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Client', completed: false },
+    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Project Manager', completed: false },
   ],
   'AGE REVERSAL TECHNOLOGY CENTER': [
-    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Client', completed: false },
+    { titulo: 'Onboarding', sectionName: '1. ACCESS & ONBOARDING', responsable_rol: 'Project Manager', completed: false },
   ],
 }
 
@@ -150,82 +150,82 @@ export const runPatchV1 = async (userId) => {
 const CLIENT_UPDATES = {
   'AGNEW': {
     overrides: [
-      { title: 'Create UGC Videos (new offer)', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Doctor Video — Long', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Doctor Video — Short', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Short Videos (new offer)', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create New Landing Page', role: 'Funneler', alias: 'Julius' },
-      { title: 'Set Up New Pixel', role: 'Funneler', alias: 'Julius' }
+      { title: 'Create UGC Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Doctor Video — Long', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Doctor Video — Short', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Short Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create New Landing Page', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Set Up New Pixel', role: 'GoHighLevel Specialist', alias: 'Julius' }
     ]
   },
   'BLOOMFIELD': {
     overrides: [
-      { title: 'Waiting for Raw Videos', role: 'Client', alias: 'Client' }
+      { title: 'Waiting for Raw Videos', role: 'Project Manager', alias: null }
     ]
   },
   'GRASS LAKE': {
     overrides: [
-      { title: 'Create UGC Videos (new offer)', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Doctor Video — Long', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Doctor Video — Short', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Short Videos (new offer)', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create New Landing Page', role: 'Funneler', alias: 'Julius' },
-      { title: 'Set Up New Pixel', role: 'Funneler', alias: 'Julius' }
+      { title: 'Create UGC Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Doctor Video — Long', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Doctor Video — Short', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Short Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create New Landing Page', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Set Up New Pixel', role: 'GoHighLevel Specialist', alias: 'Julius' }
     ]
   },
   'DELTA': {
     overrides: [
-      { title: 'Create New Landing Page', role: 'Funneler', alias: 'Julius' },
-      { title: 'Set Up New Pixel', role: 'Funneler', alias: 'Julius' },
-      { title: 'Create Doctor Video — Long', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Doctor Video — Short', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Short Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true },
-      { title: 'Create UGC Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true }
+      { title: 'Create New Landing Page', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Set Up New Pixel', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Create Doctor Video — Long', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Doctor Video — Short', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Short Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true },
+      { title: 'Create UGC Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true }
     ]
   },
   'ECKERT': {
     overrides: [
-      { title: 'Create New Landing Page', role: 'Funneler', alias: 'Julius' },
-      { title: 'Set Up New Pixel', role: 'Funneler', alias: 'Julius' },
-      { title: 'Create Doctor Video — Long', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Doctor Video — Short', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Short Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true },
-      { title: 'Create UGC Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true }
+      { title: 'Create New Landing Page', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Set Up New Pixel', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Create Doctor Video — Long', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Doctor Video — Short', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Short Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true },
+      { title: 'Create UGC Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true }
     ]
   },
   'MOORE': {
     overrides: [
-      { title: 'Create New Landing Page', role: 'Funneler', alias: 'Julius' },
-      { title: 'Set Up New Pixel', role: 'Funneler', alias: 'Julius' },
-      { title: 'Create Doctor Video — Long', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Doctor Video — Short', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Short Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true },
-      { title: 'Create UGC Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true }
+      { title: 'Create New Landing Page', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Set Up New Pixel', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Create Doctor Video — Long', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Doctor Video — Short', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Short Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true },
+      { title: 'Create UGC Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true }
     ]
   },
   'MESA': {
     overrides: [
-      { title: 'Create New Landing Page', role: 'Funneler', alias: 'Julius' },
-      { title: 'Set Up New Pixel', role: 'Funneler', alias: 'Julius' },
-      { title: 'Create Doctor Video — Long', role: 'Video Editor', alias: 'Jorge', inProgress: true },
-      { title: 'Create Doctor Video — Short', role: 'Video Editor', alias: 'Jorge' },
-      { title: 'Create Short Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true },
-      { title: 'Create UGC Videos (new offer)', role: 'Video Editor', alias: 'Jorge', completed: true }
+      { title: 'Create New Landing Page', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Set Up New Pixel', role: 'GoHighLevel Specialist', alias: 'Julius' },
+      { title: 'Create Doctor Video — Long', role: 'Video Editor/Meta Specialist', alias: 'Jorge', inProgress: true },
+      { title: 'Create Doctor Video — Short', role: 'Video Editor/Meta Specialist', alias: 'Jorge' },
+      { title: 'Create Short Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true },
+      { title: 'Create UGC Videos (new offer)', role: 'Video Editor/Meta Specialist', alias: 'Jorge', completed: true }
     ]
   },
   'PURE SEOUL': {
     overrides: [
-      { title: 'Onboarding', role: 'Client', alias: 'Client' }
+      { title: 'Onboarding', role: 'Project Manager', alias: null }
     ]
   },
   'NAPLES IDEAL FITNESS': {
     overrides: [
-      { title: 'Onboarding', role: 'Client', alias: 'Client' }
+      { title: 'Onboarding', role: 'Project Manager', alias: null }
     ]
   },
   'AGE REVERSAL TECHNOLOGY CENTER': {
     overrides: [
-      { title: 'Onboarding', role: 'Client', alias: 'Client' }
+      { title: 'Onboarding', role: 'Project Manager', alias: null }
     ]
   }
 }
@@ -335,64 +335,64 @@ export const runInitialMigrationAndSeed = async (userId) => {
 // ─── RESET: delete all template tasks, keep only the user-specified ones ───────
 const USER_TASKS = {
   'AGNEW': [
-    { titulo: 'Create UGC Videos (new offer)',  sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Create UGC Videos (new offer)',  sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
   ],
   'BLOOMFIELD': [
-    { titulo: 'Waiting for Raw Videos',          sectionName: '5. VIDEO AD MATERIALS (Client Must Provide)', responsable_rol: 'Client',      status: 'pending',      completed: false },
+    { titulo: 'Waiting for Raw Videos',          sectionName: '5. VIDEO AD MATERIALS (Client Must Provide)', responsable_rol: 'Project Manager',      status: 'pending',      completed: false },
   ],
   'GRASS LAKE': [
-    { titulo: 'Create UGC Videos (new offer)',  sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
+    { titulo: 'Create UGC Videos (new offer)',  sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
   ],
   'DELTA': [
-    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
-    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
   ],
   'ECKERT': [
-    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
-    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
   ],
   'MOORE': [
-    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
-    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
   ],
   'MESA': [
-    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'Funneler',      status: 'pending',      completed: false },
-    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'in_progress',  completed: false },
-    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'pending',      completed: false },
-    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
-    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor', status: 'completed',    completed: true  },
+    { titulo: 'Create New Landing Page',         sectionName: '4. LANDING PAGE',                           responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Set Up New Pixel',                sectionName: '3. PIXEL & TRACKING',                       responsable_rol: 'GoHighLevel Specialist',      status: 'pending',      completed: false },
+    { titulo: 'Create Doctor Video — Long',      sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'in_progress',  completed: false },
+    { titulo: 'Create Doctor Video — Short',     sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'pending',      completed: false },
+    { titulo: 'Create Short Videos (new offer)', sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
+    { titulo: 'Create UGC Videos (new offer)',   sectionName: '6. VIDEO AD CREATION',                      responsable_rol: 'Video Editor/Meta Specialist', status: 'completed',    completed: true  },
   ],
   'PURE SEOUL': [
-    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Client',        status: 'pending',      completed: false },
+    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Project Manager',        status: 'pending',      completed: false },
   ],
   'NAPLES IDEAL FITNESS': [
-    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Client',        status: 'pending',      completed: false },
+    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Project Manager',        status: 'pending',      completed: false },
   ],
   'AGE REVERSAL TECHNOLOGY CENTER': [
-    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Client',        status: 'pending',      completed: false },
+    { titulo: 'Onboarding',                      sectionName: '1. ACCESS & ONBOARDING',                    responsable_rol: 'Project Manager',        status: 'pending',      completed: false },
   ],
 }
 
@@ -485,16 +485,16 @@ const NEW_CLIENTS = [
 ]
 
 const GOOGLE_ADS_TASKS = [
-  { title: 'Adv. Verification', role: 'Media Buyer' },
-  { title: 'Connect SiteKit (Google Tag)', role: 'Funneler' },
-  { title: 'Google Tag Installation', role: 'Funneler' },
-  { title: 'Install GHL # Script', role: 'Funneler' },
-  { title: 'Map GHL Conv. > Google Ads', role: 'Media Buyer' },
-  { title: 'Create Conv. Actions', role: 'Media Buyer' },
-  { title: 'Create Campaigns', role: 'Media Buyer' },
-  { title: 'Connect GMB', role: 'Media Buyer' },
-  { title: 'Create Assets', role: 'Graphic Designer' },
-  { title: 'Launch Campaigns', role: 'Media Buyer' },
+  { title: 'Adv. Verification', role: 'Video Editor/Meta Specialist' },
+  { title: 'Connect SiteKit (Google Tag)', role: 'GoHighLevel Specialist' },
+  { title: 'Google Tag Installation', role: 'GoHighLevel Specialist' },
+  { title: 'Install GHL # Script', role: 'GoHighLevel Specialist' },
+  { title: 'Map GHL Conv. > Google Ads', role: 'Video Editor/Meta Specialist' },
+  { title: 'Create Conv. Actions', role: 'Video Editor/Meta Specialist' },
+  { title: 'Create Campaigns', role: 'Video Editor/Meta Specialist' },
+  { title: 'Connect GMB', role: 'Video Editor/Meta Specialist' },
+  { title: 'Create Assets', role: 'Video Editor/Meta Specialist' },
+  { title: 'Launch Campaigns', role: 'Video Editor/Meta Specialist' },
 ]
 
 export const runPatchV4 = async (userId) => {
@@ -898,6 +898,106 @@ export const runPatchV8 = async (userId) => {
   }
 
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
+}
+
+// ─── PATCH V9: add platform_budgets map to all clients ───────────────────────
+export const runPatchV9 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v9_platform_budgets')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const clientsSnap = await getDocs(collection(db, 'clients'))
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+  const emptyPlatformBudgets = {
+    lsa:             { allocated: 0, spent: 0 },
+    google_ads:      { allocated: 0, spent: 0 },
+    facebook_ads:    { allocated: 0, spent: 0 },
+    ai_receptionist: { allocated: 0, spent: 0 },
+    seo:             { allocated: 0, spent: 0 },
+    website_built:   { allocated: 0, spent: 0 },
+  }
+  let count = 0
+  for (let i = 0; i < clients.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const client of clients.slice(i, i + 400)) {
+      if (client.platform_budgets) continue
+      batch.update(doc(db, 'clients', client.id), { platform_budgets: emptyPlatformBudgets })
+      count++
+    }
+    await batch.commit()
+  }
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_updated: count })
+}
+
+// ─── PATCH V10: migrate old role names to new roles ──────────────────────────
+export const runPatchV10 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v10_role_migration')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const ROLE_MAP = {
+    'Client':          'Project Manager',
+    'Media Buyer':     'Video Editor/Meta Specialist',
+    'Funneler':        'GoHighLevel Specialist',
+    'Video Editor':    'Video Editor/Meta Specialist',
+    'Graphic Designer':'Video Editor/Meta Specialist',
+  }
+
+  const [tasksSnap, profilesSnap] = await Promise.all([
+    getDocs(collection(db, 'checklist_tasks')),
+    getDocs(collection(db, 'profiles')),
+  ])
+  const now = new Date().toISOString()
+  let count = 0
+
+  const taskDocs = tasksSnap.docs.filter(d => ROLE_MAP[d.data().responsable_rol])
+  for (let i = 0; i < taskDocs.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const d of taskDocs.slice(i, i + 400)) {
+      batch.update(d.ref, { responsable_rol: ROLE_MAP[d.data().responsable_rol], actualizado_en: now })
+      count++
+    }
+    await batch.commit()
+  }
+
+  const profileDocs = profilesSnap.docs.filter(d => ROLE_MAP[d.data().rol_equipo])
+  for (let i = 0; i < profileDocs.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const d of profileDocs.slice(i, i + 400)) {
+      batch.update(d.ref, { rol_equipo: ROLE_MAP[d.data().rol_equipo] })
+      count++
+    }
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, docs_updated: count })
+}
+
+// ─── PATCH V11: add services map to all clients ───────────────────────────────
+export const runPatchV11 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v11_services')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const clientsSnap = await getDocs(collection(db, 'clients'))
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+  const emptyServices = {
+    lsa: false, google_ads: false, facebook_ads: false,
+    ai_receptionist: false, seo: false, website_built: false,
+  }
+  let count = 0
+  for (let i = 0; i < clients.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const client of clients.slice(i, i + 400)) {
+      if (client.services) continue
+      batch.update(doc(db, 'clients', client.id), { services: emptyServices })
+      count++
+    }
+    await batch.commit()
+  }
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_updated: count })
 }
 
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {

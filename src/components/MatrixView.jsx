@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react'
 import { updateDoc, deleteDoc, doc, collection, addDoc, writeBatch, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2, Share2 } from 'lucide-react'
-import { AREAS } from '../lib/constants'
+import { AREAS, ROLE_BADGE_STYLES } from '../lib/constants'
 
 const COL_MIN_W = 60
 
@@ -223,10 +223,10 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
               <span style={{
                 display: 'inline-block', padding: '4px 10px', borderRadius: 20,
                 fontSize: 12, fontWeight: 600,
-                background: { 'Client': '#fffbeb', 'Media Buyer': '#eef2ff', 'Funneler': '#ecfdf5', 'Video Editor': '#faf5ff', 'Graphic Designer': '#fff1f2' }[item.task.responsable_rol] || '#f3f4f6',
-                color: { 'Client': '#b45309', 'Media Buyer': '#4338ca', 'Funneler': '#047857', 'Video Editor': '#7e22ce', 'Graphic Designer': '#be123c' }[item.task.responsable_rol] || '#374151',
+                background: { 'Video Editor/Meta Specialist': '#faf5ff', 'Google Specialist': '#eff6ff', 'GoHighLevel Specialist': '#ecfdf5', 'Project Manager': '#eef2ff', 'CEO': '#fff1f2' }[item.task.responsable_rol] || '#f3f4f6',
+                color: { 'Video Editor/Meta Specialist': '#7e22ce', 'Google Specialist': '#1d4ed8', 'GoHighLevel Specialist': '#047857', 'Project Manager': '#4338ca', 'CEO': '#be123c' }[item.task.responsable_rol] || '#374151',
                 border: '1px solid',
-                borderColor: { 'Client': '#fde68a', 'Media Buyer': '#c7d2fe', 'Funneler': '#a7f3d0', 'Video Editor': '#e9d5ff', 'Graphic Designer': '#fecdd3' }[item.task.responsable_rol] || '#e5e7eb',
+                borderColor: { 'Video Editor/Meta Specialist': '#e9d5ff', 'Google Specialist': '#bfdbfe', 'GoHighLevel Specialist': '#a7f3d0', 'Project Manager': '#c7d2fe', 'CEO': '#fecdd3' }[item.task.responsable_rol] || '#e5e7eb',
               }}>
                 {item.task.responsable_rol}
               </span>

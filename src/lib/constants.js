@@ -1,20 +1,29 @@
 import { Megaphone, Search, Target } from 'lucide-react'
 
 export const ROLES = [
-  'Client',
-  'Media Buyer',
-  'Funneler',
-  'Video Editor',
-  'Graphic Designer',
+  'Video Editor/Meta Specialist',
+  'Google Specialist',
+  'GoHighLevel Specialist',
+  'Project Manager',
+  'CEO',
 ]
 
 export const ROLE_BADGE_STYLES = {
-  'Client': 'bg-amber-50 text-amber-700 border-amber-200',
-  'Media Buyer': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  'Funneler': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Video Editor': 'bg-purple-50 text-purple-700 border-purple-200',
-  'Graphic Designer': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Video Editor/Meta Specialist': 'bg-purple-50 text-purple-700 border-purple-200',
+  'Google Specialist': 'bg-blue-50 text-blue-700 border-blue-200',
+  'GoHighLevel Specialist': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Project Manager': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'CEO': 'bg-rose-50 text-rose-700 border-rose-200',
 }
+
+export const PLATFORMS = [
+  { id: 'lsa',             label: 'LSA' },
+  { id: 'google_ads',      label: 'Google Ads' },
+  { id: 'facebook_ads',    label: 'Facebook Ads' },
+  { id: 'ai_receptionist', label: 'AI Receptionist' },
+  { id: 'seo',             label: 'SEO' },
+  { id: 'website_built',   label: 'Website Built' },
+]
 
 export const AREAS = [
   { id: 'meta_ads', name: 'Meta Ads', color: 'from-blue-500 to-indigo-600' },
