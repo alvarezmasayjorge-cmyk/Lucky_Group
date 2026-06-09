@@ -80,6 +80,39 @@ export const TEMPLATE_TASKS = [
   { sectionName: 'Website SEO/AEO Set Up', title: 'set up SEO/AEO automation', role: 'GoHighLevel Specialist' },
   { sectionName: 'Website SEO/AEO Set Up', title: 'Create WP site if client doesn\'t have one', role: 'Project Manager' },
 
-  // ── Funnels (empty — placeholder for future tasks) ──
-  // ── AI Receptionist (empty — placeholder for future tasks) ──
+  // ── Funnels ──
+  { sectionName: 'Funnels', title: 'Build funnel according to strategy', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Client Assets', role: 'Project Manager' },
+  { sectionName: 'Funnels', title: 'Purchase Lookalike Domain', role: 'Project Manager' },
+  { sectionName: 'Funnels', title: 'Client Offer', role: 'Project Manager' },
+  { sectionName: 'Funnels', title: 'Tracking code installation', role: 'GoHighLevel Specialist' },
+
+  // ── Workflow Automation ──
+  { sectionName: 'Funnels', title: 'CAPI Conversion', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Google Number Pool Conversion', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'New Lead Optin - Did not schedule', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Booked Appointment Reminder', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'No Show/Cancelled Appointment Win-back', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Pipeline Changed To No Show/Cancelled', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Lead to AI Outbound Call', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Get and Place Call: Outbound + Inbound', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Reactivation Call: Stale Customer', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Lead Type Updater & Aging', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Inbound Message Internal Notification', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Missed Call Text Back', role: 'GoHighLevel Specialist' },
+
+  // ── Tracking/Setup (GHL) ──
+  { sectionName: 'Funnels', title: 'Integration', role: 'Project Manager' },
+  { sectionName: 'Funnels', title: 'Integration (Meta)', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Integrate Domain', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'Set and Validate Dedicated Sending Domain', role: 'GoHighLevel Specialist' },
+  { sectionName: 'Funnels', title: 'A2P Application', role: 'Project Manager' },
+  { sectionName: 'Funnels', title: 'Google Lead Event Creation', role: 'Google Specialist' },
+
+  // ── AI Receptionist ──
+  { sectionName: 'AI Receptionist', title: 'Prompt', role: 'GoHighLevel Specialist' },
+  { sectionName: 'AI Receptionist', title: 'AI Receptionist Objective', role: 'GoHighLevel Specialist' },
+  { sectionName: 'AI Receptionist', title: 'Retell Workspace', role: 'Project Manager' },
+  { sectionName: 'AI Receptionist', title: 'Add Client Payment Method', role: 'Project Manager' },
+  { sectionName: 'AI Receptionist', title: 'Purchase Number', role: 'GoHighLevel Specialist' },
 ];

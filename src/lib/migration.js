@@ -1300,6 +1300,103 @@ export const runPatchV13 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_updated: count })
 }
 
+// ─── PATCH V14: add GHL funnel + AI receptionist tasks ──────────────────────
+export const runPatchV14 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v14_ghl_tasks_from_julius')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const [clientsSnap, sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  // Tasks to add (from Julius tasks file)
+  const NEW_TASKS = [
+    // Funnels section tasks
+    { s: 'Funnels', t: 'Build funnel according to strategy', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Client Assets', r: 'Project Manager' },
+    { s: 'Funnels', t: 'Purchase Lookalike Domain', r: 'Project Manager' },
+    { s: 'Funnels', t: 'Client Offer', r: 'Project Manager' },
+    { s: 'Funnels', t: 'Tracking code installation', r: 'GoHighLevel Specialist' },
+    // Workflow Automation
+    { s: 'Funnels', t: 'CAPI Conversion', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Google Number Pool Conversion', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'New Lead Optin - Did not schedule', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Booked Appointment Reminder', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'No Show/Cancelled Appointment Win-back', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Pipeline Changed To No Show/Cancelled', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Lead to AI Outbound Call', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Get and Place Call: Outbound + Inbound', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Reactivation Call: Stale Customer', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Lead Type Updater & Aging', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Inbound Message Internal Notification', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Missed Call Text Back', r: 'GoHighLevel Specialist' },
+    // Tracking/Setup
+    { s: 'Funnels', t: 'Integration', r: 'Project Manager' },
+    { s: 'Funnels', t: 'Integration (Meta)', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Integrate Domain', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'Set and Validate Dedicated Sending Domain', r: 'GoHighLevel Specialist' },
+    { s: 'Funnels', t: 'A2P Application', r: 'Project Manager' },
+    { s: 'Funnels', t: 'Google Lead Event Creation', r: 'Google Specialist' },
+    // AI Receptionist
+    { s: 'AI Receptionist', t: 'Prompt', r: 'GoHighLevel Specialist' },
+    { s: 'AI Receptionist', t: 'AI Receptionist Objective', r: 'GoHighLevel Specialist' },
+    { s: 'AI Receptionist', t: 'Retell Workspace', r: 'Project Manager' },
+    { s: 'AI Receptionist', t: 'Add Client Payment Method', r: 'Project Manager' },
+    { s: 'AI Receptionist', t: 'Purchase Number', r: 'GoHighLevel Specialist' },
+  ]
+
+  // Build dedup set from existing tasks
+  const existingKeys = new Set(
+    tasksSnap.docs.map(d => {
+      const t = d.data()
+      return `${t.client_id}|${t.titulo}`
+    })
+  )
+
+  let count = 0
+  for (let ci = 0; ci < clients.length; ci += 2) {
+    const chunk = clients.slice(ci, ci + 2)
+    const batch = writeBatch(db)
+
+    for (const client of chunk) {
+      for (const task of NEW_TASKS) {
+        const secId = sections.find(s => s.nombre === task.s)?.id
+        if (!secId) continue
+
+        const key = `${client.id}|${task.t}`
+        if (existingKeys.has(key)) continue
+
+        const taskRef = doc(collection(db, 'checklist_tasks'))
+        batch.set(taskRef, {
+          titulo: task.t,
+          responsable_rol: task.r,
+          seccion_id: secId,
+          client_id: client.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'low',
+          responsable_id: null,
+          creado_por: userId,
+          creado_en: now,
+          actualizado_en: now,
+        })
+        count++
+      }
+    }
+
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_created: count })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
