@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3 } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -11,6 +11,7 @@ import MatrixView from './MatrixView'
 import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
+import ProfileModal from './ProfileModal'
 import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
@@ -30,6 +31,7 @@ export default function Dashboard({ user, profile }) {
   const [isCreatingClient, setIsCreatingClient] = useState(false)
   const [showNewClientModal, setShowNewClientModal] = useState(false)
   const [clientError, setClientError] = useState('')
+  const [showProfileModal, setShowProfileModal] = useState(false)
 
   // Navigation
   const [activeClient, setActiveClient] = useState(null)
@@ -215,6 +217,13 @@ export default function Dashboard({ user, profile }) {
     setActiveView('board')
   }, [])
 
+  const handleProfileUpdated = useCallback(async () => {
+    setShowProfileModal(false)
+    // Reload profile data
+    const profSnap = await getDocs(collection(db, 'profiles'))
+    setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+  }, [])
+
   const handleOpenEdit = useCallback((task) => {
     setEditingTask(task)
     setIsModalOpen(true)
@@ -327,7 +336,13 @@ export default function Dashboard({ user, profile }) {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-gray-600 hidden sm:block">{profile.nombre_completo}</span>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="hidden sm:flex flex-col items-end text-right px-3 py-1 rounded-lg hover:bg-gray-100 transition"
+              >
+                <p className="text-sm font-semibold text-gray-900">{profile.nombre_completo}</p>
+                <p className="text-xs text-gray-500">{profile.rol_equipo}</p>
+              </button>
               <NotificationBell
                 allTareas={allTareas}
                 clients={clients}
@@ -488,6 +503,12 @@ export default function Dashboard({ user, profile }) {
           isLoading={isCreatingClient}
           errorMessage={clientError}
         />
+        <ProfileModal
+          profile={profile}
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          onProfileUpdated={handleProfileUpdated}
+        />
       </div>
     )
   }
@@ -514,10 +535,13 @@ export default function Dashboard({ user, profile }) {
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-right hidden sm:block">
-              <p className="font-bold text-gray-900">{profile.nombre_completo}</p>
-              <p className="text-gray-500 font-medium text-xs bg-gray-100 inline-block px-2 py-0.5 rounded-full mt-0.5">{profile.rol_equipo}</p>
-            </div>
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="hidden sm:flex flex-col items-end px-3 py-1 rounded-lg hover:bg-gray-100 transition"
+            >
+              <p className="text-sm font-bold text-gray-900">{profile.nombre_completo}</p>
+              <p className="text-gray-500 font-medium text-xs">{profile.rol_equipo}</p>
+            </button>
             <NotificationBell
               allTareas={allTareas}
               clients={clients}
@@ -832,6 +856,13 @@ export default function Dashboard({ user, profile }) {
           activeClientId={activeClient.id}
         />
       )}
+
+      <ProfileModal
+        profile={profile}
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
     </div>
   )
 }
