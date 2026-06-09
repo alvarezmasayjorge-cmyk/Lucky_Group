@@ -1000,6 +1000,213 @@ export const runPatchV11 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_updated: count })
 }
 
+// ─── PATCH V12: realign all tasks with Project Tracker Sheet ─────────────────
+// Deletes old sections & tasks (except Video Ad Creation / Image Ad Creation),
+// creates new sections from the updated TEMPLATE_SECTIONS, and seeds tasks
+// per client with correct completion status from the Project Tracker spreadsheet.
+
+export const runPatchV12 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v12_realign_tasks')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const [clientsSnap, sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  // ─ Identify sections to PRESERVE (Video Ad Creation / Image Ad Creation) ─
+  const PRESERVE_SECTIONS = new Set()
+  for (const s of sections) {
+    if (s.nombre === '6. VIDEO AD CREATION' || s.nombre === '7. IMAGE AD CREATION') {
+      PRESERVE_SECTIONS.add(s.id)
+    }
+  }
+
+  // ─ Delete all tasks NOT in preserved sections ─
+  const tasksToDelete = tasksSnap.docs.filter(d => !PRESERVE_SECTIONS.has(d.data().seccion_id))
+  for (let i = 0; i < tasksToDelete.length; i += 400) {
+    const batch = writeBatch(db)
+    tasksToDelete.slice(i, i + 400).forEach(d => batch.delete(d.ref))
+    await batch.commit()
+  }
+
+  // ─ Delete all sections NOT preserved ─
+  const sectionsToDelete = sections.filter(s => !PRESERVE_SECTIONS.has(s.id))
+  for (let i = 0; i < sectionsToDelete.length; i += 400) {
+    const batch = writeBatch(db)
+    sectionsToDelete.slice(i, i + 400).forEach(s => batch.delete(doc(db, 'checklist_sections', s.id)))
+    await batch.commit()
+  }
+
+  // ─ Create new sections ─
+  const NEW_SECTIONS = [
+    { nombre: 'Onboarding Process', area: 'meta_ads', orden: 1 },
+    { nombre: 'Facebook Ads Setup', area: 'meta_ads', orden: 2 },
+    { nombre: 'Meta Business Setup', area: 'meta_ads', orden: 3 },
+    { nombre: 'Pixel and Tracking', area: 'meta_ads', orden: 4 },
+    { nombre: 'Video Ad Materials', area: 'meta_ads', orden: 5 },
+    { nombre: 'Video Ad Creation', area: 'meta_ads', orden: 6 },
+    { nombre: 'Google Ads', area: 'google_ads', orden: 7 },
+    { nombre: 'Website SEO/AEO Set Up', area: 'seo', orden: 8 },
+    { nombre: 'Funnels', area: 'ghl', orden: 9 },
+    { nombre: 'AI Receptionist', area: 'ghl', orden: 10 },
+  ]
+
+  const sectionMap = {} // nombre → id
+  const secBatch = writeBatch(db)
+  for (const s of NEW_SECTIONS) {
+    const ref = doc(collection(db, 'checklist_sections'))
+    secBatch.set(ref, { ...s, creado_en: now })
+    sectionMap[s.nombre] = ref.id
+  }
+  await secBatch.commit()
+
+  // ─ Task definitions with default completion ─
+  // d: true = completed for most clients, false = pending for most
+  const TASKS = [
+    // Onboarding Process
+    { s: 'Onboarding Process', t: 'Onboarding Form | GHL Creation & Access | AI Marketing Content Requirements emails', r: 'Project Manager', d: true },
+    { s: 'Onboarding Process', t: 'Onboarding call', r: 'Project Manager', d: false },
+    { s: 'Onboarding Process', t: 'Website Access', r: 'Project Manager', d: true },
+    { s: 'Onboarding Process', t: 'Domain Access', r: 'Project Manager', d: true },
+    { s: 'Onboarding Process', t: 'Offer Details', r: 'Project Manager', d: true },
+    { s: 'Onboarding Process', t: 'A2P Registration', r: 'Project Manager', d: true },
+    // Facebook Ads Setup
+    { s: 'Facebook Ads Setup', t: 'Meta access (Business Manager, Ad Account, Page, IG)', r: 'Project Manager', d: true },
+    { s: 'Facebook Ads Setup', t: 'Website access (pixel + domain verification)', r: 'Project Manager', d: true },
+    { s: 'Facebook Ads Setup', t: 'Brand kit (logo, colors, fonts)', r: 'Project Manager', d: false },
+    { s: 'Facebook Ads Setup', t: 'Target audience info', r: 'Project Manager', d: false },
+    { s: 'Facebook Ads Setup', t: 'Budget & campaign goals', r: 'Project Manager', d: true },
+    // Meta Business Setup
+    { s: 'Meta Business Setup', t: 'Domain verification (Meta Business Manager)', r: 'Video Editor/Meta Specialist', d: false },
+    { s: 'Meta Business Setup', t: 'Ad account setup (create/connect + payments)', r: 'Video Editor/Meta Specialist', d: false },
+    { s: 'Meta Business Setup', t: 'Connect Facebook Page & Instagram', r: 'Video Editor/Meta Specialist', d: false },
+    { s: 'Meta Business Setup', t: 'Assign team roles & permissions', r: 'Video Editor/Meta Specialist', d: true },
+    // Pixel and Tracking
+    { s: 'Pixel and Tracking', t: 'Create Facebook Pixel', r: 'Video Editor/Meta Specialist', d: true },
+    { s: 'Pixel and Tracking', t: 'Install pixel on website (header code or via GTM)', r: 'GoHighLevel Specialist', d: true },
+    { s: 'Pixel and Tracking', t: 'Set up standard events (PageView, Lead, Purchase, complete registration)', r: 'GoHighLevel Specialist', d: true },
+    { s: 'Pixel and Tracking', t: 'Verify Pixel is firing correctly (Meta Pixel Helper)', r: 'GoHighLevel Specialist', d: true },
+    { s: 'Pixel and Tracking', t: 'Set up conversions API (server side tracking)', r: 'GoHighLevel Specialist', d: true },
+    { s: 'Pixel and Tracking', t: 'Define & configure UTM parameters for all URLs', r: 'Video Editor/Meta Specialist', d: true },
+    { s: 'Pixel and Tracking', t: 'Test all events in Meta Events Manager', r: 'Video Editor/Meta Specialist', d: true },
+    // Video Ad Materials
+    { s: 'Video Ad Materials', t: 'Raw photo and video files', r: 'Project Manager', d: true },
+    { s: 'Video Ad Materials', t: 'Voice Recording', r: 'Project Manager', d: true },
+    { s: 'Video Ad Materials', t: 'Multi-angle portrait photos of the client', r: 'Project Manager', d: true },
+    // Video Ad Creation (only for clients that don't have old 6./7. sections)
+    { s: 'Video Ad Creation', t: 'Video Edits - Long Versions', r: 'Video Editor/Meta Specialist', d: true },
+    { s: 'Video Ad Creation', t: 'Video Edits - Short Versions', r: 'Video Editor/Meta Specialist', d: false },
+    { s: 'Video Ad Creation', t: 'Image ads creation', r: 'Video Editor/Meta Specialist', d: true },
+    // Google Ads
+    { s: 'Google Ads', t: 'Adv. Verification', r: 'Project Manager', d: true },
+    { s: 'Google Ads', t: 'Connect Search Console to Google Ads', r: 'Project Manager', d: false },
+    { s: 'Google Ads', t: 'Connect SiteKit (Google Tag)', r: 'GoHighLevel Specialist', d: false },
+    { s: 'Google Ads', t: 'Google Tag Installation', r: 'Project Manager', d: false },
+    { s: 'Google Ads', t: 'Install GHL # Script', r: 'GoHighLevel Specialist', d: true },
+    { s: 'Google Ads', t: 'Map GHL Conv. > Google Ads', r: 'GoHighLevel Specialist', d: true },
+    { s: 'Google Ads', t: 'Create Conv. Actions', r: 'Google Specialist', d: true },
+    { s: 'Google Ads', t: 'Create Campaigns', r: 'Google Specialist', d: true },
+    { s: 'Google Ads', t: 'Connect GMB to Google ads', r: 'Project Manager', d: true },
+    { s: 'Google Ads', t: 'Create Assets', r: 'Google Specialist', d: true },
+    { s: 'Google Ads', t: 'GA4 Connection (add Jens and LCG as Admins)', r: 'Project Manager', d: false },
+    { s: 'Google Ads', t: 'GSC Connection (add Jens and LCG as Admins)', r: 'Project Manager', d: false },
+    { s: 'Google Ads', t: 'Get LSA Approved', r: 'Project Manager', d: false },
+    { s: 'Google Ads', t: 'Launch Campaigns', r: 'Google Specialist', d: true },
+    { s: 'Google Ads', t: 'Launch Campaigns (LSA)', r: 'Project Manager', d: false },
+    // Website SEO/AEO Set Up
+    { s: 'Website SEO/AEO Set Up', t: 'Add luckyconsultinggroup@gmail.com & Jens as manager for GBP', r: 'Project Manager', d: false },
+    { s: 'Website SEO/AEO Set Up', t: 'Geoscribe connection to WP site', r: 'Project Manager', d: false },
+    { s: 'Website SEO/AEO Set Up', t: 'set up GBP automation', r: 'GoHighLevel Specialist', d: false },
+    { s: 'Website SEO/AEO Set Up', t: 'set up SEO/AEO automation', r: 'GoHighLevel Specialist', d: false },
+    { s: 'Website SEO/AEO Set Up', t: "Create WP site if client doesn't have one", r: 'Project Manager', d: false },
+  ]
+
+  // ─ Per-client overrides (exceptions to the default `d` value above) ─
+  // Only list clients whose status DIFFERS from the default
+  const OVERRIDES = {
+    'Bloomfield Construction & Restoration': {
+      'Onboarding call': true,
+      'Brand kit (logo, colors, fonts)': true,
+      'Target audience info': true,
+      'Domain verification (Meta Business Manager)': true,
+      'Assign team roles & permissions': true,
+      'Geoscribe connection to WP site': true,
+    },
+    'Prime Tree Care': {
+      'Onboarding call': true,
+      'Brand kit (logo, colors, fonts)': true,
+      'Target audience info': true,
+      'Domain verification (Meta Business Manager)': true,
+    },
+    'Age Reversal Technology Center': {
+      'Launch Campaigns (LSA)': true,
+    },
+  }
+
+  // ─ Determine which clients already have preserved Video Ad sections ─
+  const clientsWithOldVideoTasks = new Set()
+  for (const d of tasksSnap.docs) {
+    if (PRESERVE_SECTIONS.has(d.data().seccion_id)) {
+      clientsWithOldVideoTasks.add(d.data().client_id)
+    }
+  }
+
+  // ─ Create tasks for each client ─
+  let totalCreated = 0
+  for (let ci = 0; ci < clients.length; ci += 2) {
+    const chunk = clients.slice(ci, ci + 2)
+    const batch = writeBatch(db)
+
+    for (const client of chunk) {
+      const overrides = OVERRIDES[client.name] || {}
+
+      for (const task of TASKS) {
+        // Skip Video Ad Creation tasks for clients that still have old sections
+        if (task.s === 'Video Ad Creation' && clientsWithOldVideoTasks.has(client.id)) continue
+
+        const secId = sectionMap[task.s]
+        if (!secId) continue
+
+        const isCompleted = overrides[task.t] !== undefined ? overrides[task.t] : task.d
+
+        const taskRef = doc(collection(db, 'checklist_tasks'))
+        batch.set(taskRef, {
+          titulo: task.t,
+          responsable_rol: task.r,
+          seccion_id: secId,
+          client_id: client.id,
+          status: isCompleted ? 'completed' : 'pending',
+          completed: isCompleted,
+          prioridad: 'low',
+          responsable_id: null,
+          creado_por: userId,
+          creado_en: now,
+          actualizado_en: now,
+        })
+        totalCreated++
+      }
+    }
+
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, {
+    applied_at: now,
+    applied_by: userId,
+    sections_deleted: sectionsToDelete.length,
+    tasks_deleted: tasksToDelete.length,
+    sections_created: NEW_SECTIONS.length,
+    tasks_created: totalCreated,
+  })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

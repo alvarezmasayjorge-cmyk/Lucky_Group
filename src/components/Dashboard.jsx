@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -12,13 +12,14 @@ import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
   { ...AREAS[0], icon: <Megaphone className="w-4 h-4 mr-2" /> },
   { ...AREAS[1], icon: <Search className="w-4 h-4 mr-2" /> },
-  { ...AREAS[2], icon: <Target className="w-4 h-4 mr-2" /> },
+  { ...AREAS[2], icon: <Globe className="w-4 h-4 mr-2" /> },
+  { ...AREAS[3], icon: <Target className="w-4 h-4 mr-2" /> },
 ]
 
 export default function Dashboard({ user, profile }) {
@@ -134,6 +135,7 @@ export default function Dashboard({ user, profile }) {
         await runPatchV9(user.uid)
         await runPatchV10(user.uid)
         await runPatchV11(user.uid)
+        await runPatchV12(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))

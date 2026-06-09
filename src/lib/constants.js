@@ -1,4 +1,4 @@
-import { Megaphone, Search, Target } from 'lucide-react'
+import { Megaphone, Search, Target, Globe } from 'lucide-react'
 
 export const ROLES = [
   'Video Editor/Meta Specialist',
@@ -28,6 +28,7 @@ export const PLATFORMS = [
 export const AREAS = [
   { id: 'meta_ads', name: 'Meta Ads', color: 'from-blue-500 to-indigo-600' },
   { id: 'google_ads', name: 'Google Ads', color: 'from-amber-400 to-orange-500' },
+  { id: 'seo', name: 'SEO / AEO', color: 'from-violet-400 to-purple-600' },
   { id: 'ghl', name: 'Go High Level', color: 'from-emerald-400 to-teal-600' },
 ]
 
