@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react'
 import { updateDoc, deleteDoc, doc, collection, addDoc, writeBatch, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2, Share2 } from 'lucide-react'
+import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2, Share2, Pencil, Users } from 'lucide-react'
 import { AREAS, ROLE_BADGE_STYLES } from '../lib/constants'
 
 const COL_MIN_W = 60
@@ -418,6 +418,9 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
   const [addingTaskSec, setAddingTaskSec] = useState(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [deletingSec, setDeletingSec] = useState(null)
+  const [editingSec, setEditingSec] = useState(null)
+  const [editSecName, setEditSecName] = useState('')
+  const [selectedClients, setSelectedClients] = useState({})
 
   const processColRef = useRef(null)
   const cellsBodyRef = useRef(null)
@@ -564,13 +567,21 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
     setDeletingSec(null)
   }
 
+  const handleRenameSection = async (secId) => {
+    if (!editSecName.trim()) return
+    await updateDoc(doc(db, 'checklist_sections', secId), { nombre: editSecName.trim() })
+    setEditingSec(null)
+    setEditSecName('')
+  }
+
   const handleAddTask = async (secId) => {
     if (!newTaskTitle.trim()) return
     const now = new Date().toISOString()
-    // Add for all clients
-    for (let i = 0; i < clients.length; i += 10) {
+    const targetClients = clients.filter(c => selectedClients[c.id])
+    if (targetClients.length === 0) return
+    for (let i = 0; i < targetClients.length; i += 10) {
       const batch = writeBatch(db)
-      clients.slice(i, i + 10).forEach(client => {
+      targetClients.slice(i, i + 10).forEach(client => {
         const ref = doc(collection(db, 'checklist_tasks'))
         batch.set(ref, {
           titulo: newTaskTitle.trim(),
@@ -590,6 +601,32 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
     }
     setNewTaskTitle('')
     setAddingTaskSec(null)
+    setSelectedClients({})
+  }
+
+  const openAddTask = (secId) => {
+    if (addingTaskSec === secId) {
+      setAddingTaskSec(null)
+      setSelectedClients({})
+      setNewTaskTitle('')
+    } else {
+      setAddingTaskSec(secId)
+      setNewTaskTitle('')
+      const all = {}
+      clients.forEach(c => { all[c.id] = true })
+      setSelectedClients(all)
+    }
+  }
+
+  const toggleAllClients = () => {
+    const allSelected = clients.every(c => selectedClients[c.id])
+    if (allSelected) {
+      setSelectedClients({})
+    } else {
+      const all = {}
+      clients.forEach(c => { all[c.id] = true })
+      setSelectedClients(all)
+    }
   }
 
   const ROW_H = 40
@@ -782,13 +819,22 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                   </div>
                   <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setAddingTaskSec(addingTaskSec === sec.id ? null : sec.id); setNewTaskTitle('') }}
+                      onClick={(e) => { e.stopPropagation(); openAddTask(sec.id) }}
                       title="Add task"
                       style={{ padding: 2, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', borderRadius: 4 }}
                       onMouseOver={e => e.currentTarget.style.color = 'white'}
                       onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
                     >
                       <Plus style={{ width: 14, height: 14 }} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingSec(sec.id); setEditSecName(sec.nombre) }}
+                      title="Edit section name"
+                      style={{ padding: 2, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', borderRadius: 4 }}
+                      onMouseOver={e => e.currentTarget.style.color = 'white'}
+                      onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                    >
+                      <Pencil style={{ width: 13, height: 13 }} />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeletingSec(deletingSec === sec.id ? null : sec.id) }}
@@ -811,21 +857,75 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                   </div>
                 )}
 
-                {/* Add task input */}
-                {addingTaskSec === sec.id && isOpen && (
-                  <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e5e7eb', background: '#f0fdf4', gap: 4 }}>
+                {/* Edit section name */}
+                {editingSec === sec.id && (
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', borderBottom: '1px solid #e5e7eb', background: '#eff6ff', gap: 4 }}>
                     <input
                       autoFocus
-                      value={newTaskTitle}
-                      onChange={e => setNewTaskTitle(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleAddTask(sec.id); if (e.key === 'Escape') setAddingTaskSec(null) }}
-                      placeholder="New task name..."
-                      style={{ flex: 1, fontSize: 12, padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
+                      value={editSecName}
+                      onChange={e => setEditSecName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleRenameSection(sec.id); if (e.key === 'Escape') setEditingSec(null) }}
+                      style={{ flex: 1, fontSize: 12, padding: '5px 8px', border: '1px solid #93c5fd', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
                     />
-                    <button
-                      onClick={() => handleAddTask(sec.id)}
-                      style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2E7D32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-                    >Add</button>
+                    <button onClick={() => handleRenameSection(sec.id)} style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Save</button>
+                    <button onClick={() => setEditingSec(null)} style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, background: 'white', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>✕</button>
+                  </div>
+                )}
+
+                {/* Add task input with client selection */}
+                {addingTaskSec === sec.id && isOpen && (
+                  <div style={{ padding: '8px', borderBottom: '1px solid #e5e7eb', background: '#f0fdf4' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+                      <input
+                        autoFocus
+                        value={newTaskTitle}
+                        onChange={e => setNewTaskTitle(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && newTaskTitle.trim()) handleAddTask(sec.id); if (e.key === 'Escape') { setAddingTaskSec(null); setSelectedClients({}) } }}
+                        placeholder="New task name..."
+                        style={{ flex: 1, fontSize: 12, padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
+                      />
+                      <button
+                        onClick={() => handleAddTask(sec.id)}
+                        disabled={!newTaskTitle.trim() || !clients.some(c => selectedClients[c.id])}
+                        style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2E7D32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', opacity: (!newTaskTitle.trim() || !clients.some(c => selectedClients[c.id])) ? 0.5 : 1 }}
+                      >Add</button>
+                      <button onClick={() => { setAddingTaskSec(null); setSelectedClients({}) }} style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, background: 'white', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>✕</button>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <Users style={{ width: 12, height: 12, color: '#6b7280' }} />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Clients ({clients.filter(c => selectedClients[c.id]).length}/{clients.length})
+                      </span>
+                      <button
+                        onClick={toggleAllClients}
+                        style={{ fontSize: 10, fontWeight: 700, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      >
+                        {clients.every(c => selectedClients[c.id]) ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div style={{ maxHeight: 120, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                      {clients.map(c => (
+                        <label
+                          key={c.id}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px',
+                            borderRadius: 12, fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                            background: selectedClients[c.id] ? '#dcfce7' : '#f3f4f6',
+                            border: `1px solid ${selectedClients[c.id] ? '#86efac' : '#e5e7eb'}`,
+                            color: selectedClients[c.id] ? '#166534' : '#6b7280',
+                            transition: 'all 0.1s',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!selectedClients[c.id]}
+                            onChange={() => setSelectedClients(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
+                            style={{ width: 12, height: 12, accentColor: '#2E7D32' }}
+                          />
+                          {c.name}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -941,9 +1041,21 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                     <div style={{ height: 37, background: '#fff1f2', borderBottom: '1px solid #fecdd3' }} />
                   )}
 
-                  {/* Spacer for add task input */}
+                  {/* Spacer for edit section name */}
+                  {editingSec === sec.id && (
+                    <div style={{ height: 37, background: '#eff6ff', borderBottom: '1px solid #e5e7eb' }} />
+                  )}
+
+                  {/* Spacer for add task input with client selection */}
                   {addingTaskSec === sec.id && isOpen && (
-                    <div style={{ height: 37, background: '#f0fdf4', borderBottom: '1px solid #e5e7eb' }} />
+                    <div style={{ minHeight: 37, background: '#f0fdf4', borderBottom: '1px solid #e5e7eb' }}>
+                      {/* Mirror the height of the left-side panel */}
+                      <div style={{ padding: '8px', visibility: 'hidden' }}>
+                        <div style={{ height: 30 }} />
+                        <div style={{ height: 18, marginBottom: 4 }} />
+                        <div style={{ maxHeight: 120 }} />
+                      </div>
+                    </div>
                   )}
 
                   {/* Task cells */}
