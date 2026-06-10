@@ -223,10 +223,10 @@ function TaskDrawer({ item, onClose, onOpenClient }) {
               <span style={{
                 display: 'inline-block', padding: '4px 10px', borderRadius: 20,
                 fontSize: 12, fontWeight: 600,
-                background: { 'Video Editor/Meta Specialist': '#faf5ff', 'Google Specialist': '#eff6ff', 'GoHighLevel Specialist': '#ecfdf5', 'Project Manager': '#eef2ff', 'CEO': '#fff1f2' }[item.task.responsable_rol] || '#f3f4f6',
-                color: { 'Video Editor/Meta Specialist': '#7e22ce', 'Google Specialist': '#1d4ed8', 'GoHighLevel Specialist': '#047857', 'Project Manager': '#4338ca', 'CEO': '#be123c' }[item.task.responsable_rol] || '#374151',
+                background: { 'Video Editor/Meta Specialist': '#faf5ff', 'Google Specialist': '#eff6ff', 'GoHighLevel Specialist': '#ecfdf5', 'Project Manager': '#eef2ff', 'Executive Assistant': '#fffbeb', 'CEO': '#fff1f2' }[item.task.responsable_rol] || '#f3f4f6',
+                color: { 'Video Editor/Meta Specialist': '#7e22ce', 'Google Specialist': '#1d4ed8', 'GoHighLevel Specialist': '#047857', 'Project Manager': '#4338ca', 'Executive Assistant': '#b45309', 'CEO': '#be123c' }[item.task.responsable_rol] || '#374151',
                 border: '1px solid',
-                borderColor: { 'Video Editor/Meta Specialist': '#e9d5ff', 'Google Specialist': '#bfdbfe', 'GoHighLevel Specialist': '#a7f3d0', 'Project Manager': '#c7d2fe', 'CEO': '#fecdd3' }[item.task.responsable_rol] || '#e5e7eb',
+                borderColor: { 'Video Editor/Meta Specialist': '#e9d5ff', 'Google Specialist': '#bfdbfe', 'GoHighLevel Specialist': '#a7f3d0', 'Project Manager': '#c7d2fe', 'Executive Assistant': '#fde68a', 'CEO': '#fecdd3' }[item.task.responsable_rol] || '#e5e7eb',
               }}>
                 {item.task.responsable_rol}
               </span>

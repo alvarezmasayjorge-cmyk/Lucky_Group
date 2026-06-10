@@ -1595,6 +1595,40 @@ export const runPatchV20 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, sections_updated: updated })
 }
 
+export const runPatchV21 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v21_delete_asphalt_client')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const clientsSnap = await getDocs(collection(db, 'clients'))
+  const asphalt = clientsSnap.docs.find(d => d.data().name === 'Asphalt')
+  if (!asphalt) {
+    await setDoc(patchRef, { applied_at: new Date().toISOString(), applied_by: userId, skipped: true })
+    return
+  }
+
+  const clientId = asphalt.id
+  const tasksSnap = await getDocs(collection(db, 'checklist_tasks'))
+  const clientTasks = tasksSnap.docs.filter(d => d.data().client_id === clientId)
+
+  // Delete tasks in batches of 400
+  for (let i = 0; i < clientTasks.length; i += 400) {
+    const batch = writeBatch(db)
+    clientTasks.slice(i, i + 400).forEach(t => batch.delete(doc(db, 'checklist_tasks', t.id)))
+    await batch.commit()
+  }
+
+  // Delete the client document
+  await deleteDoc(doc(db, 'clients', clientId))
+
+  await setDoc(patchRef, {
+    applied_at: new Date().toISOString(),
+    applied_by: userId,
+    deleted_client: 'Asphalt',
+    tasks_deleted: clientTasks.length,
+  })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

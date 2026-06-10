@@ -12,7 +12,7 @@ import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -156,6 +156,7 @@ export default function Dashboard({ user, profile }) {
         await runPatchV18(user.uid)
         await runPatchV19(user.uid)
         await runPatchV20(user.uid)
+        await runPatchV21(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
@@ -705,7 +706,7 @@ export default function Dashboard({ user, profile }) {
 
         {/* ── TEAM VIEW ── */}
         {activeView === 'team' && (() => {
-          const ROLES_ORDER = ['Video Editor/Meta Specialist', 'Google Specialist', 'GoHighLevel Specialist', 'Project Manager', 'CEO']
+          const ROLES_ORDER = ['Video Editor/Meta Specialist', 'Google Specialist', 'GoHighLevel Specialist', 'Project Manager', 'Executive Assistant', 'CEO']
           // Use ALL tasks across all clients
           const inProgressAll = allTareas.filter(t => getTaskStatus(t) === 'in_progress')
           const pendingAll    = allTareas.filter(t => getTaskStatus(t) === 'pending')
