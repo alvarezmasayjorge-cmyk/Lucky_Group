@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
-import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc } from 'firebase/firestore'
+import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc, addDoc, deleteDoc, writeBatch } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings, Pencil, Trash2 } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -52,6 +52,17 @@ export default function Dashboard({ user, profile }) {
   const toggleSection = useCallback((sectionId) => {
     setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))
   }, [])
+
+  // Section management
+  const [showNewSection, setShowNewSection] = useState(false)
+  const [newSectionName, setNewSectionName] = useState('')
+  const [newSectionArea, setNewSectionArea] = useState('meta_ads')
+  const [editingSectionId, setEditingSectionId] = useState(null)
+  const [editSectionName, setEditSectionName] = useState('')
+  const [deletingSectionId, setDeletingSectionId] = useState(null)
+  const [addingTaskToSection, setAddingTaskToSection] = useState(null)
+  const [bulkTaskTitle, setBulkTaskTitle] = useState('')
+  const [bulkSelectedClients, setBulkSelectedClients] = useState({})
 
   // Collapsed role cards (team view) — same convention
   const [collapsedRoles, setCollapsedRoles] = useState({})
@@ -248,6 +259,93 @@ export default function Dashboard({ user, profile }) {
     setEditingTask(null)
   }, [])
 
+  // Section management handlers
+  const handleCreateSection = useCallback(async () => {
+    if (!newSectionName.trim()) return
+    const maxOrden = Math.max(...secciones.map(s => s.orden || 0), 0)
+    await addDoc(collection(db, 'checklist_sections'), {
+      nombre: newSectionName.trim(),
+      area: newSectionArea,
+      orden: maxOrden + 1,
+      creado_en: new Date().toISOString(),
+    })
+    setNewSectionName('')
+    setShowNewSection(false)
+  }, [newSectionName, newSectionArea, secciones])
+
+  const handleRenameSection = useCallback(async (secId) => {
+    if (!editSectionName.trim()) return
+    await updateDoc(doc(db, 'checklist_sections', secId), { nombre: editSectionName.trim() })
+    setEditingSectionId(null)
+    setEditSectionName('')
+  }, [editSectionName])
+
+  const handleDeleteSection = useCallback(async (secId) => {
+    const tasksInSection = allTareas.filter(t => t.seccion_id === secId)
+    for (let i = 0; i < tasksInSection.length; i += 400) {
+      const batch = writeBatch(db)
+      tasksInSection.slice(i, i + 400).forEach(t => batch.delete(doc(db, 'checklist_tasks', t.id)))
+      await batch.commit()
+    }
+    await deleteDoc(doc(db, 'checklist_sections', secId))
+    setDeletingSectionId(null)
+  }, [allTareas])
+
+  const handleBulkAddTask = useCallback(async (secId) => {
+    if (!bulkTaskTitle.trim()) return
+    const targets = clients.filter(c => bulkSelectedClients[c.id])
+    if (targets.length === 0) return
+    const now = new Date().toISOString()
+    for (let i = 0; i < targets.length; i += 10) {
+      const batch = writeBatch(db)
+      targets.slice(i, i + 10).forEach(client => {
+        const ref = doc(collection(db, 'checklist_tasks'))
+        batch.set(ref, {
+          titulo: bulkTaskTitle.trim(),
+          responsable_rol: '',
+          seccion_id: secId,
+          client_id: client.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'medium',
+          responsable_id: null,
+          creado_por: profile?.id || '',
+          creado_en: now,
+          actualizado_en: now,
+        })
+      })
+      await batch.commit()
+    }
+    setBulkTaskTitle('')
+    setAddingTaskToSection(null)
+    setBulkSelectedClients({})
+  }, [bulkTaskTitle, bulkSelectedClients, clients, profile])
+
+  const openBulkAddTask = useCallback((secId) => {
+    if (addingTaskToSection === secId) {
+      setAddingTaskToSection(null)
+      setBulkSelectedClients({})
+      setBulkTaskTitle('')
+    } else {
+      setAddingTaskToSection(secId)
+      setBulkTaskTitle('')
+      const all = {}
+      clients.forEach(c => { all[c.id] = true })
+      setBulkSelectedClients(all)
+    }
+  }, [addingTaskToSection, clients])
+
+  const toggleAllBulkClients = useCallback(() => {
+    const allSelected = clients.every(c => bulkSelectedClients[c.id])
+    if (allSelected) {
+      setBulkSelectedClients({})
+    } else {
+      const all = {}
+      clients.forEach(c => { all[c.id] = true })
+      setBulkSelectedClients(all)
+    }
+  }, [clients, bulkSelectedClients])
+
   // --- DERIVED DATA ---
 
   // Per-client task stats for master view (memoized)
@@ -426,7 +524,6 @@ export default function Dashboard({ user, profile }) {
               clients={clients}
               allTareas={allTareas}
               secciones={secciones}
-              profile={profile}
               onOpenClient={(client, taskId, area) => {
                 setActiveClient(client)
                 setMasterView('table')
@@ -777,14 +874,14 @@ export default function Dashboard({ user, profile }) {
 
             return (
               <div key={seccion.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                {/* Section Header — clickeable para contraer/expandir */}
-                <button
-                  onClick={() => toggleSection(seccion.id)}
-                  className="w-full text-left bg-gray-50/50 px-6 py-5 border-b border-gray-100 relative overflow-hidden group"
-                >
+                {/* Section Header */}
+                <div className="bg-gray-50/50 px-6 py-5 border-b border-gray-100 relative overflow-hidden group">
                   <div className="absolute left-0 top-0 w-1 h-full bg-gray-300 group-hover:bg-brand-primary transition-colors" />
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                    <div
+                      className="flex items-center space-x-3 flex-1 cursor-pointer"
+                      onClick={() => toggleSection(seccion.id)}
+                    >
                       <div className="p-2 bg-white rounded-lg shadow-sm border border-gray-100">
                         <LayoutGrid className="w-5 h-5 text-gray-400" />
                       </div>
@@ -797,8 +894,30 @@ export default function Dashboard({ user, profile }) {
                           {secProgress === 100 && <CheckCircle2 className="w-4 h-4 text-green-500" />}
                         </div>
                       )}
+                      <button
+                        onClick={() => openBulkAddTask(seccion.id)}
+                        title="Add task to multiple clients"
+                        className="p-1.5 rounded-lg hover:bg-green-50 text-gray-400 hover:text-green-600 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => { setEditingSectionId(seccion.id); setEditSectionName(seccion.nombre) }}
+                        title="Rename section"
+                        className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingSectionId(deletingSectionId === seccion.id ? null : seccion.id)}
+                        title="Delete section"
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                       <ChevronDown
-                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${collapsedSections[seccion.id] ? '' : '-rotate-90'}`}
+                        onClick={() => toggleSection(seccion.id)}
+                        className={`w-5 h-5 text-gray-400 cursor-pointer transition-transform duration-200 ${collapsedSections[seccion.id] ? '' : '-rotate-90'}`}
                       />
                     </div>
                   </div>
@@ -810,7 +929,82 @@ export default function Dashboard({ user, profile }) {
                       />
                     </div>
                   )}
-                </button>
+                </div>
+
+                {/* Delete section confirmation */}
+                {deletingSectionId === seccion.id && (
+                  <div className="flex items-center gap-3 px-6 py-3 bg-red-50 border-b border-red-200">
+                    <span className="text-sm font-semibold text-red-700 flex-1">Delete this section and all its tasks?</span>
+                    <button onClick={() => setDeletingSectionId(null)} className="text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1 hover:bg-gray-50">Cancel</button>
+                    <button onClick={() => handleDeleteSection(seccion.id)} className="text-sm font-bold text-white bg-red-500 rounded-lg px-3 py-1 hover:bg-red-600">Delete</button>
+                  </div>
+                )}
+
+                {/* Edit section name */}
+                {editingSectionId === seccion.id && (
+                  <div className="flex items-center gap-2 px-6 py-3 bg-blue-50 border-b border-blue-200">
+                    <input
+                      autoFocus
+                      value={editSectionName}
+                      onChange={e => setEditSectionName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleRenameSection(seccion.id); if (e.key === 'Escape') setEditingSectionId(null) }}
+                      className="flex-1 text-sm px-3 py-1.5 border border-blue-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                    <button onClick={() => handleRenameSection(seccion.id)} className="text-sm font-bold text-white bg-blue-600 rounded-lg px-3 py-1.5 hover:bg-blue-700">Save</button>
+                    <button onClick={() => setEditingSectionId(null)} className="text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50">Cancel</button>
+                  </div>
+                )}
+
+                {/* Bulk add task with client selection */}
+                {addingTaskToSection === seccion.id && (
+                  <div className="px-6 py-4 bg-green-50 border-b border-green-200 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        autoFocus
+                        value={bulkTaskTitle}
+                        onChange={e => setBulkTaskTitle(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && bulkTaskTitle.trim()) handleBulkAddTask(seccion.id); if (e.key === 'Escape') { setAddingTaskToSection(null); setBulkSelectedClients({}) } }}
+                        placeholder="Task name..."
+                        className="flex-1 text-sm px-3 py-2 border border-green-300 rounded-lg outline-none focus:ring-2 focus:ring-green-400"
+                      />
+                      <button
+                        onClick={() => handleBulkAddTask(seccion.id)}
+                        disabled={!bulkTaskTitle.trim() || !clients.some(c => bulkSelectedClients[c.id])}
+                        className="text-sm font-bold text-white bg-green-600 rounded-lg px-4 py-2 hover:bg-green-700 disabled:opacity-40"
+                      >Add</button>
+                      <button onClick={() => { setAddingTaskToSection(null); setBulkSelectedClients({}) }} className="text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">Cancel</button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5 text-gray-500" />
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                        Clients ({clients.filter(c => bulkSelectedClients[c.id]).length}/{clients.length})
+                      </span>
+                      <button onClick={toggleAllBulkClients} className="text-xs font-bold text-blue-600 hover:text-blue-700">
+                        {clients.every(c => bulkSelectedClients[c.id]) ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {clients.map(c => (
+                        <label
+                          key={c.id}
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border ${
+                            bulkSelectedClients[c.id]
+                              ? 'bg-green-100 border-green-300 text-green-800'
+                              : 'bg-gray-100 border-gray-200 text-gray-500'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!bulkSelectedClients[c.id]}
+                            onChange={() => setBulkSelectedClients(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
+                            className="w-3 h-3 accent-green-600"
+                          />
+                          {c.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {collapsedSections[seccion.id] && (
                   <div className="divide-y divide-gray-100/80 bg-white">
@@ -847,6 +1041,39 @@ export default function Dashboard({ user, profile }) {
               </div>
               <h3 className="text-lg font-bold text-gray-900">No sections found</h3>
               <p className="text-gray-500 mt-1">Try adjusting your filters.</p>
+            </div>
+          )}
+
+          {/* Add new section */}
+          {!showNewSection ? (
+            <button
+              onClick={() => { setShowNewSection(true); setNewSectionArea(activeArea) }}
+              className="col-span-full flex items-center justify-center gap-2 py-4 bg-white rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-bold text-sm hover:border-green-400 hover:text-green-600 hover:bg-green-50/30 transition-all cursor-pointer"
+            >
+              <Plus className="w-5 h-5" />
+              Add Section
+            </button>
+          ) : (
+            <div className="col-span-full bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-3">
+              <input
+                autoFocus
+                value={newSectionName}
+                onChange={e => setNewSectionName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleCreateSection(); if (e.key === 'Escape') setShowNewSection(false) }}
+                placeholder="Section name..."
+                className="w-full text-sm px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-400 font-medium"
+              />
+              <div className="flex items-center gap-3">
+                <select
+                  value={newSectionArea}
+                  onChange={e => setNewSectionArea(e.target.value)}
+                  className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-400 font-medium"
+                >
+                  {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+                <button onClick={handleCreateSection} className="text-sm font-bold text-white bg-green-600 rounded-xl px-5 py-2 hover:bg-green-700 transition-colors">Create</button>
+                <button onClick={() => setShowNewSection(false)} className="text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50 transition-colors">Cancel</button>
+              </div>
             </div>
           )}
         </div>

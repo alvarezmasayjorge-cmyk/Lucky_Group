@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react'
-import { updateDoc, deleteDoc, doc, collection, addDoc, writeBatch, getDocs, query, where } from 'firebase/firestore'
-import { db } from '../lib/firebase'
-import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Trash2, Plus, Link2, Share2, Pencil, Users } from 'lucide-react'
-import { AREAS, ROLE_BADGE_STYLES } from '../lib/constants'
+import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Link2, Share2 } from 'lucide-react'
+import { AREAS } from '../lib/constants'
 
 const COL_MIN_W = 60
 
@@ -86,35 +84,12 @@ const Cell = memo(function Cell({ task, isColHL, isRowHL, onHover, onLeave, onCl
 
 // ── Task Drawer ────────────────────────────────────────────────────────────────
 
-function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
-  const [saving, setSaving] = useState(false)
-  const [localStatus, setLocalStatus] = useState(null)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+function TaskDrawer({ item, onClose, onOpenClient }) {
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    if (item) setLocalStatus(getStatus(item.task))
-  }, [item])
 
   if (!item) return null
 
-  const status = localStatus || getStatus(item.task)
-
-  const handleStatusChange = async (newStatus) => {
-    setLocalStatus(newStatus)
-    setSaving(true)
-    try {
-      await updateDoc(doc(db, 'checklist_tasks', item.task.id), {
-        status: newStatus,
-        completed: newStatus === 'completed',
-        actualizado_en: new Date().toISOString(),
-      })
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setSaving(false)
-    }
-  }
+  const status = getStatus(item.task)
 
   const statusColors = {
     pending: { bg: '#f3f4f6', text: '#6b7280', border: '#d1d5db' },
@@ -171,35 +146,19 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
             </div>
           )}
 
-          {/* Status */}
+          {/* Status (read-only) */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Status
             </label>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {['pending', 'in_progress', 'completed'].map(s => {
-                const labels = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed' }
-                const c = statusColors[s]
-                const isActive = s === status
-                return (
-                  <button
-                    key={s}
-                    onClick={() => handleStatusChange(s)}
-                    disabled={saving}
-                    style={{
-                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                      border: `1.5px solid ${isActive ? c.border : '#e5e7eb'}`,
-                      background: isActive ? c.bg : 'white',
-                      color: isActive ? c.text : '#9ca3af',
-                      cursor: saving ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {labels[s]}
-                  </button>
-                )
-              })}
-            </div>
+            <span style={{
+              padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+              border: `1.5px solid ${statusColors[status]?.border || '#e5e7eb'}`,
+              background: statusColors[status]?.bg || '#f3f4f6',
+              color: statusColors[status]?.text || '#6b7280',
+            }}>
+              {{ pending: 'Pending', in_progress: 'In Progress', completed: 'Completed' }[status]}
+            </span>
           </div>
 
           {/* Description */}
@@ -344,39 +303,6 @@ function TaskDrawer({ item, onClose, onOpenClient, onDeleteTask }) {
             <ExternalLink style={{ width: 14, height: 14 }} />
             Open Full Board
           </button>
-          {!confirmDelete ? (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              style={{
-                width: '100%', padding: '11px', borderRadius: 10,
-                background: 'white', color: '#ef4444',
-                fontWeight: 700, fontSize: 13, border: '1.5px solid #fecdd3', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              }}
-            >
-              <Trash2 style={{ width: 14, height: 14 }} />
-              Delete Task
-            </button>
-          ) : (
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                onClick={() => setConfirmDelete(false)}
-                style={{ flex: 1, padding: '11px', borderRadius: 10, background: 'white', color: '#6b7280', fontWeight: 700, fontSize: 13, border: '1.5px solid #e5e7eb', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  await deleteDoc(doc(db, 'checklist_tasks', item.task.id))
-                  onDeleteTask()
-                  onClose()
-                }}
-                style={{ flex: 1, padding: '11px', borderRadius: 10, background: '#ef4444', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }}
-              >
-                Confirm Delete
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </>
@@ -404,7 +330,7 @@ function Tooltip({ text, x, y }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-export default function MatrixView({ clients, allTareas, secciones, onOpenClient, profile }) {
+export default function MatrixView({ clients, allTareas, secciones, onOpenClient }) {
   const [areaFilter, setAreaFilter] = useState('all')
   const [highlightCol, setHighlightCol] = useState(null)
   const [highlightRow, setHighlightRow] = useState(null)
@@ -412,15 +338,6 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
   const [drawerItem, setDrawerItem] = useState(null)
   const [tooltip, setTooltip] = useState(null)
   const [progressLoaded, setProgressLoaded] = useState(false)
-  const [showNewSection, setShowNewSection] = useState(false)
-  const [newSectionName, setNewSectionName] = useState('')
-  const [newSectionArea, setNewSectionArea] = useState('meta_ads')
-  const [addingTaskSec, setAddingTaskSec] = useState(null)
-  const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [deletingSec, setDeletingSec] = useState(null)
-  const [editingSec, setEditingSec] = useState(null)
-  const [editSecName, setEditSecName] = useState('')
-  const [selectedClients, setSelectedClients] = useState({})
 
   const processColRef = useRef(null)
   const cellsBodyRef = useRef(null)
@@ -541,93 +458,6 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
     setCollapsed(prev => ({ ...prev, [secId]: !prev[secId] }))
   }
 
-  const handleCreateSection = async () => {
-    if (!newSectionName.trim()) return
-    const maxOrden = Math.max(...secciones.map(s => s.orden || 0), 0)
-    await addDoc(collection(db, 'checklist_sections'), {
-      nombre: newSectionName.trim(),
-      area: newSectionArea,
-      orden: maxOrden + 1,
-      creado_en: new Date().toISOString(),
-    })
-    setNewSectionName('')
-    setShowNewSection(false)
-  }
-
-  const handleDeleteSection = async (secId) => {
-    // Delete all tasks in this section for all clients
-    const tasksInSection = allTareas.filter(t => t.seccion_id === secId)
-    for (let i = 0; i < tasksInSection.length; i += 400) {
-      const batch = writeBatch(db)
-      tasksInSection.slice(i, i + 400).forEach(t => batch.delete(doc(db, 'checklist_tasks', t.id)))
-      await batch.commit()
-    }
-    // Delete the section itself
-    await deleteDoc(doc(db, 'checklist_sections', secId))
-    setDeletingSec(null)
-  }
-
-  const handleRenameSection = async (secId) => {
-    if (!editSecName.trim()) return
-    await updateDoc(doc(db, 'checklist_sections', secId), { nombre: editSecName.trim() })
-    setEditingSec(null)
-    setEditSecName('')
-  }
-
-  const handleAddTask = async (secId) => {
-    if (!newTaskTitle.trim()) return
-    const now = new Date().toISOString()
-    const targetClients = clients.filter(c => selectedClients[c.id])
-    if (targetClients.length === 0) return
-    for (let i = 0; i < targetClients.length; i += 10) {
-      const batch = writeBatch(db)
-      targetClients.slice(i, i + 10).forEach(client => {
-        const ref = doc(collection(db, 'checklist_tasks'))
-        batch.set(ref, {
-          titulo: newTaskTitle.trim(),
-          responsable_rol: '',
-          seccion_id: secId,
-          client_id: client.id,
-          status: 'pending',
-          completed: false,
-          prioridad: 'medium',
-          responsable_id: null,
-          creado_por: profile?.id || '',
-          creado_en: now,
-          actualizado_en: now,
-        })
-      })
-      await batch.commit()
-    }
-    setNewTaskTitle('')
-    setAddingTaskSec(null)
-    setSelectedClients({})
-  }
-
-  const openAddTask = (secId) => {
-    if (addingTaskSec === secId) {
-      setAddingTaskSec(null)
-      setSelectedClients({})
-      setNewTaskTitle('')
-    } else {
-      setAddingTaskSec(secId)
-      setNewTaskTitle('')
-      const all = {}
-      clients.forEach(c => { all[c.id] = true })
-      setSelectedClients(all)
-    }
-  }
-
-  const toggleAllClients = () => {
-    const allSelected = clients.every(c => selectedClients[c.id])
-    if (allSelected) {
-      setSelectedClients({})
-    } else {
-      const all = {}
-      clients.forEach(c => { all[c.id] = true })
-      setSelectedClients(all)
-    }
-  }
 
   const ROW_H = 40
   const SECTION_H = 36
@@ -817,117 +647,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                     }} />
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sec.nombre}</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openAddTask(sec.id) }}
-                      title="Add task"
-                      style={{ padding: 2, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', borderRadius: 4 }}
-                      onMouseOver={e => e.currentTarget.style.color = 'white'}
-                      onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                    >
-                      <Plus style={{ width: 14, height: 14 }} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditingSec(sec.id); setEditSecName(sec.nombre) }}
-                      title="Edit section name"
-                      style={{ padding: 2, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', borderRadius: 4 }}
-                      onMouseOver={e => e.currentTarget.style.color = 'white'}
-                      onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                    >
-                      <Pencil style={{ width: 13, height: 13 }} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDeletingSec(deletingSec === sec.id ? null : sec.id) }}
-                      title="Delete section"
-                      style={{ padding: 2, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', borderRadius: 4 }}
-                      onMouseOver={e => e.currentTarget.style.color = '#fca5a5'}
-                      onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                    >
-                      <Trash2 style={{ width: 13, height: 13 }} />
-                    </button>
-                  </div>
                 </div>
-
-                {/* Delete section confirmation */}
-                {deletingSec === sec.id && (
-                  <div style={{ background: '#fff1f2', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #fecdd3' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#be123c', flex: 1 }}>Delete section and all its tasks?</span>
-                    <button onClick={() => setDeletingSec(null)} style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', background: 'white', border: '1px solid #e5e7eb', borderRadius: 6, padding: '3px 8px', cursor: 'pointer' }}>No</button>
-                    <button onClick={() => handleDeleteSection(sec.id)} style={{ fontSize: 11, fontWeight: 700, color: 'white', background: '#ef4444', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer' }}>Yes</button>
-                  </div>
-                )}
-
-                {/* Edit section name */}
-                {editingSec === sec.id && (
-                  <div style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', borderBottom: '1px solid #e5e7eb', background: '#eff6ff', gap: 4 }}>
-                    <input
-                      autoFocus
-                      value={editSecName}
-                      onChange={e => setEditSecName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleRenameSection(sec.id); if (e.key === 'Escape') setEditingSec(null) }}
-                      style={{ flex: 1, fontSize: 12, padding: '5px 8px', border: '1px solid #93c5fd', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
-                    />
-                    <button onClick={() => handleRenameSection(sec.id)} style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Save</button>
-                    <button onClick={() => setEditingSec(null)} style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, background: 'white', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>✕</button>
-                  </div>
-                )}
-
-                {/* Add task input with client selection */}
-                {addingTaskSec === sec.id && isOpen && (
-                  <div style={{ padding: '8px', borderBottom: '1px solid #e5e7eb', background: '#f0fdf4' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
-                      <input
-                        autoFocus
-                        value={newTaskTitle}
-                        onChange={e => setNewTaskTitle(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && newTaskTitle.trim()) handleAddTask(sec.id); if (e.key === 'Escape') { setAddingTaskSec(null); setSelectedClients({}) } }}
-                        placeholder="New task name..."
-                        style={{ flex: 1, fontSize: 12, padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
-                      />
-                      <button
-                        onClick={() => handleAddTask(sec.id)}
-                        disabled={!newTaskTitle.trim() || !clients.some(c => selectedClients[c.id])}
-                        style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2E7D32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', opacity: (!newTaskTitle.trim() || !clients.some(c => selectedClients[c.id])) ? 0.5 : 1 }}
-                      >Add</button>
-                      <button onClick={() => { setAddingTaskSec(null); setSelectedClients({}) }} style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, background: 'white', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>✕</button>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <Users style={{ width: 12, height: 12, color: '#6b7280' }} />
-                      <span style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Clients ({clients.filter(c => selectedClients[c.id]).length}/{clients.length})
-                      </span>
-                      <button
-                        onClick={toggleAllClients}
-                        style={{ fontSize: 10, fontWeight: 700, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                      >
-                        {clients.every(c => selectedClients[c.id]) ? 'Deselect All' : 'Select All'}
-                      </button>
-                    </div>
-                    <div style={{ maxHeight: 120, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                      {clients.map(c => (
-                        <label
-                          key={c.id}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px',
-                            borderRadius: 12, fontSize: 11, fontWeight: 500, cursor: 'pointer',
-                            background: selectedClients[c.id] ? '#dcfce7' : '#f3f4f6',
-                            border: `1px solid ${selectedClients[c.id] ? '#86efac' : '#e5e7eb'}`,
-                            color: selectedClients[c.id] ? '#166534' : '#6b7280',
-                            transition: 'all 0.1s',
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!!selectedClients[c.id]}
-                            onChange={() => setSelectedClients(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
-                            style={{ width: 12, height: 12, accentColor: '#2E7D32' }}
-                          />
-                          {c.name}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Task rows */}
                 {isOpen && tasks.map((titulo, idx) => {
@@ -959,44 +679,6 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
             )
           })}
 
-          {/* Add new section button */}
-          {!showNewSection ? (
-            <button
-              onClick={() => setShowNewSection(true)}
-              style={{
-                width: '100%', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 6,
-                background: 'white', border: 'none', borderTop: '1px solid #e5e7eb',
-                cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#9ca3af',
-                transition: 'all 0.15s',
-              }}
-              onMouseOver={e => { e.currentTarget.style.color = '#2E7D32'; e.currentTarget.style.background = '#f0fdf4' }}
-              onMouseOut={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'white' }}
-            >
-              <Plus style={{ width: 14, height: 14 }} /> Add Section
-            </button>
-          ) : (
-            <div style={{ padding: '10px 12px', borderTop: '1px solid #e5e7eb', background: '#f9fafb' }}>
-              <input
-                autoFocus
-                value={newSectionName}
-                onChange={e => setNewSectionName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleCreateSection(); if (e.key === 'Escape') setShowNewSection(false) }}
-                placeholder="Section name..."
-                style={{ width: '100%', fontSize: 12, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', marginBottom: 6, fontFamily: 'inherit' }}
-              />
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                <select
-                  value={newSectionArea}
-                  onChange={e => setNewSectionArea(e.target.value)}
-                  style={{ flex: 1, fontSize: 11, padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: 6, outline: 'none', fontFamily: 'inherit' }}
-                >
-                  {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-                <button onClick={handleCreateSection} style={{ padding: '4px 10px', fontSize: 11, fontWeight: 700, background: '#2E7D32', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Add</button>
-                <button onClick={() => setShowNewSection(false)} style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, background: 'white', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>✕</button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Cell grid */}
@@ -1035,28 +717,6 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
                       <div key={client.id} style={{ flex: '1 1 0', minWidth: COL_MIN_W, borderRight: '1px solid #16304f' }} />
                     ))}
                   </div>
-
-                  {/* Spacer for delete confirmation */}
-                  {deletingSec === sec.id && (
-                    <div style={{ height: 37, background: '#fff1f2', borderBottom: '1px solid #fecdd3' }} />
-                  )}
-
-                  {/* Spacer for edit section name */}
-                  {editingSec === sec.id && (
-                    <div style={{ height: 37, background: '#eff6ff', borderBottom: '1px solid #e5e7eb' }} />
-                  )}
-
-                  {/* Spacer for add task input with client selection */}
-                  {addingTaskSec === sec.id && isOpen && (
-                    <div style={{ minHeight: 37, background: '#f0fdf4', borderBottom: '1px solid #e5e7eb' }}>
-                      {/* Mirror the height of the left-side panel */}
-                      <div style={{ padding: '8px', visibility: 'hidden' }}>
-                        <div style={{ height: 30 }} />
-                        <div style={{ height: 18, marginBottom: 4 }} />
-                        <div style={{ maxHeight: 120 }} />
-                      </div>
-                    </div>
-                  )}
 
                   {/* Task cells */}
                   {isOpen && tasks.map((titulo, idx) => {
@@ -1098,7 +758,6 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
           item={drawerItem}
           onClose={() => setDrawerItem(null)}
           onOpenClient={onOpenClient}
-          onDeleteTask={() => setDrawerItem(null)}
         />
       )}
     </>
