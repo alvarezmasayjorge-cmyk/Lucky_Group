@@ -1447,6 +1447,28 @@ export const runPatchV15 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_deleted: tasksCount, sections_deleted: sectionsCount })
 }
 
+// ─── PATCH V16: delete Video Ad Creation & Image Ad Creation sections ───────
+export const runPatchV16 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v16_delete_video_image_sections')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  // Find and delete Video Ad Creation & Image Ad Creation sections
+  let count = 0
+  for (const s of sections) {
+    if (s.nombre === 'Video Ad Creation' || s.nombre === 'Image Ad Creation') {
+      await deleteDoc(doc(db, 'checklist_sections', s.id))
+      count++
+    }
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, sections_deleted: count })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
