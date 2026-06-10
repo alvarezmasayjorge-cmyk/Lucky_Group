@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc, addDoc, deleteDoc, writeBatch } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings, Pencil, Trash2 } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings, Pencil, Trash2, ClipboardList } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -12,14 +12,15 @@ import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
-  { ...AREAS[0], icon: <Megaphone className="w-4 h-4 mr-2" /> },
-  { ...AREAS[1], icon: <Search className="w-4 h-4 mr-2" /> },
-  { ...AREAS[2], icon: <Globe className="w-4 h-4 mr-2" /> },
-  { ...AREAS[3], icon: <Target className="w-4 h-4 mr-2" /> },
+  { ...AREAS[0], icon: <ClipboardList className="w-4 h-4 mr-2" /> },
+  { ...AREAS[1], icon: <Megaphone className="w-4 h-4 mr-2" /> },
+  { ...AREAS[2], icon: <Search className="w-4 h-4 mr-2" /> },
+  { ...AREAS[3], icon: <Globe className="w-4 h-4 mr-2" /> },
+  { ...AREAS[4], icon: <Target className="w-4 h-4 mr-2" /> },
 ]
 
 export default function Dashboard({ user, profile }) {
@@ -36,7 +37,7 @@ export default function Dashboard({ user, profile }) {
 
   // Navigation
   const [activeClient, setActiveClient] = useState(null)
-  const [activeArea, setActiveArea] = useState('meta_ads')
+  const [activeArea, setActiveArea] = useState('onboarding')
   const [activeView, setActiveView] = useState('board') // 'board' | 'team'
   const [masterView, setMasterView] = useState('table') // 'table' | 'matrix'
 
@@ -154,6 +155,7 @@ export default function Dashboard({ user, profile }) {
         await runPatchV17(user.uid)
         await runPatchV18(user.uid)
         await runPatchV19(user.uid)
+        await runPatchV20(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
@@ -232,7 +234,7 @@ export default function Dashboard({ user, profile }) {
 
   const handleNavigateToTask = useCallback((client, task, section) => {
     setActiveClient(client)
-    setActiveArea(section?.area || 'meta_ads')
+    setActiveArea(section?.area || 'onboarding')
     setHighlightTaskId(task.id)
     setActiveView('board')
   }, [])
@@ -713,7 +715,7 @@ export default function Dashboard({ user, profile }) {
             if (taskClient) {
               const sec = secciones.find(s => s.id === task.seccion_id)
               setActiveClient(taskClient)
-              setActiveArea(sec?.area || 'meta_ads')
+              setActiveArea(sec?.area || 'onboarding')
               setActiveView('board')
               setEditingTask(task)
               setIsModalOpen(true)

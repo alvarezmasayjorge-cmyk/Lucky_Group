@@ -1573,6 +1573,28 @@ export const runPatchV19 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, sections_created: created })
 }
 
+export const runPatchV20 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v20_onboarding_separate_tab')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  let updated = 0
+  const batch = writeBatch(db)
+  for (const sec of sections) {
+    if (sec.nombre === 'Onboarding Process' && sec.area !== 'onboarding') {
+      batch.update(doc(db, 'checklist_sections', sec.id), { area: 'onboarding' })
+      updated++
+    }
+  }
+  if (updated > 0) await batch.commit()
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, sections_updated: updated })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

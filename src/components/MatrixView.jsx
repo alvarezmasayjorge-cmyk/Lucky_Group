@@ -8,6 +8,7 @@ const COL_MIN_W = 60
 
 const AREA_FILTERS = [
   { id: 'all', label: 'All Areas' },
+  { id: 'onboarding', label: 'Onboarding' },
   { id: 'meta_ads', label: 'Meta Ads' },
   { id: 'google_ads', label: 'Google Ads' },
   { id: 'ghl', label: 'Go High Level' },
@@ -503,7 +504,7 @@ export default function MatrixView({ clients, allTareas, secciones, onOpenClient
   const SECTION_H = 36
   const AREA_HEADER_H = 30
 
-  const AREA_COLORS = { meta_ads: '#1d4ed8', google_ads: '#d97706', ghl: '#059669' }
+  const AREA_COLORS = { onboarding: '#0891b2', meta_ads: '#1d4ed8', google_ads: '#d97706', ghl: '#059669' }
   const HEADER_H = window.innerWidth < 640 ? 150 : 180
   const PROCESS_COL_W = window.innerWidth < 640 ? 140 : 220
 

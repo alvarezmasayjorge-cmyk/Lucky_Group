@@ -1,6 +1,7 @@
 export const TEMPLATE_SECTIONS = [
+  // ── Onboarding ──
+  { name: 'Onboarding Process', area: 'onboarding' },
   // ── Meta Ads ──
-  { name: 'Onboarding Process', area: 'meta_ads' },
   { name: 'Facebook Ads Setup', area: 'meta_ads' },
   { name: 'Meta Business Setup', area: 'meta_ads' },
   { name: 'Pixel and Tracking', area: 'meta_ads' },
