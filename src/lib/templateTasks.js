@@ -51,10 +51,8 @@ export const TEMPLATE_TASKS = [
   { sectionName: 'Video Ad Materials', title: 'Voice Recording', role: 'Project Manager' },
   { sectionName: 'Video Ad Materials', title: 'Multi-angle portrait photos of the client', role: 'Project Manager' },
 
-  // ── Video Ad Creation ── (kept for new client seeding)
-  { sectionName: 'Video Ad Creation', title: 'Video Edits - Long Versions', role: 'Video Editor/Meta Specialist' },
-  { sectionName: 'Video Ad Creation', title: 'Video Edits - Short Versions', role: 'Video Editor/Meta Specialist' },
-  { sectionName: 'Video Ad Creation', title: 'Image ads creation', role: 'Video Editor/Meta Specialist' },
+  // ── Video Ad Creation ── (empty — user will add custom tasks)
+  // ── Image Ad Creation ── (empty — user will add custom tasks)
 
   // ── Google Ads ──
   { sectionName: 'Google Ads', title: 'Adv. Verification', role: 'Project Manager' },

@@ -1397,6 +1397,43 @@ export const runPatchV14 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_created: count })
 }
 
+// ─── PATCH V15: delete Video Ad Creation & Image Ad Creation tasks ──────────
+export const runPatchV15 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v15_delete_video_image_tasks')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const [sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  // Find Video Ad Creation & Image Ad Creation sections
+  const sectionIdsToDelete = new Set()
+  for (const s of sections) {
+    if (s.nombre === 'Video Ad Creation' || s.nombre === 'Image Ad Creation') {
+      sectionIdsToDelete.add(s.id)
+    }
+  }
+
+  // Delete all tasks in those sections
+  const tasksToDelete = tasksSnap.docs.filter(d => sectionIdsToDelete.has(d.data().seccion_id))
+  let count = 0
+  for (let i = 0; i < tasksToDelete.length; i += 400) {
+    const batch = writeBatch(db)
+    tasksToDelete.slice(i, i + 400).forEach(d => {
+      batch.delete(d.ref)
+      count++
+    })
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_deleted: count })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
