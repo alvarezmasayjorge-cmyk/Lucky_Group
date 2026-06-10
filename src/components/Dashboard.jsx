@@ -12,7 +12,7 @@ import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -140,6 +140,7 @@ export default function Dashboard({ user, profile }) {
         await runPatchV14(user.uid)
         await runPatchV15(user.uid)
         await runPatchV16(user.uid)
+        await runPatchV17(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
