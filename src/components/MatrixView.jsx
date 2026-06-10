@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react'
+import { updateDoc, doc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import { CheckCircle2, X, ExternalLink, ChevronDown, LayoutGrid, Link2, Share2 } from 'lucide-react'
 import { AREAS } from '../lib/constants'
 
@@ -85,11 +87,33 @@ const Cell = memo(function Cell({ task, isColHL, isRowHL, onHover, onLeave, onCl
 // ── Task Drawer ────────────────────────────────────────────────────────────────
 
 function TaskDrawer({ item, onClose, onOpenClient }) {
+  const [saving, setSaving] = useState(false)
+  const [localStatus, setLocalStatus] = useState(null)
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (item) setLocalStatus(getStatus(item.task))
+  }, [item])
 
   if (!item) return null
 
-  const status = getStatus(item.task)
+  const status = localStatus || getStatus(item.task)
+
+  const handleStatusChange = async (newStatus) => {
+    setLocalStatus(newStatus)
+    setSaving(true)
+    try {
+      await updateDoc(doc(db, 'checklist_tasks', item.task.id), {
+        status: newStatus,
+        completed: newStatus === 'completed',
+        actualizado_en: new Date().toISOString(),
+      })
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const statusColors = {
     pending: { bg: '#f3f4f6', text: '#6b7280', border: '#d1d5db' },
@@ -146,19 +170,35 @@ function TaskDrawer({ item, onClose, onOpenClient }) {
             </div>
           )}
 
-          {/* Status (read-only) */}
+          {/* Status */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Status
             </label>
-            <span style={{
-              padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-              border: `1.5px solid ${statusColors[status]?.border || '#e5e7eb'}`,
-              background: statusColors[status]?.bg || '#f3f4f6',
-              color: statusColors[status]?.text || '#6b7280',
-            }}>
-              {{ pending: 'Pending', in_progress: 'In Progress', completed: 'Completed' }[status]}
-            </span>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {['pending', 'in_progress', 'completed'].map(s => {
+                const labels = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed' }
+                const c = statusColors[s]
+                const isActive = s === status
+                return (
+                  <button
+                    key={s}
+                    onClick={() => handleStatusChange(s)}
+                    disabled={saving}
+                    style={{
+                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      border: `1.5px solid ${isActive ? c.border : '#e5e7eb'}`,
+                      background: isActive ? c.bg : 'white',
+                      color: isActive ? c.text : '#9ca3af',
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {labels[s]}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Description */}
