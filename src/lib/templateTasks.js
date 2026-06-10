@@ -5,7 +5,6 @@ export const TEMPLATE_SECTIONS = [
   { name: 'Meta Business Setup', area: 'meta_ads' },
   { name: 'Pixel and Tracking', area: 'meta_ads' },
   { name: 'Video Ad Materials', area: 'meta_ads' },
-  { name: 'Video Ad Creation', area: 'meta_ads' },
   // ── Google Ads ──
   { name: 'Google Ads', area: 'google_ads' },
   // ── SEO / AEO ──

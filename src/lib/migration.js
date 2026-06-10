@@ -1421,17 +1421,30 @@ export const runPatchV15 = async (userId) => {
 
   // Delete all tasks in those sections
   const tasksToDelete = tasksSnap.docs.filter(d => sectionIdsToDelete.has(d.data().seccion_id))
-  let count = 0
+  let tasksCount = 0
   for (let i = 0; i < tasksToDelete.length; i += 400) {
     const batch = writeBatch(db)
     tasksToDelete.slice(i, i + 400).forEach(d => {
       batch.delete(d.ref)
-      count++
+      tasksCount++
     })
     await batch.commit()
   }
 
-  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_deleted: count })
+  // Delete the sections themselves
+  let sectionsCount = 0
+  for (let i = 0; i < sections.length; i += 400) {
+    const batch = writeBatch(db)
+    sections.slice(i, i + 400).forEach(s => {
+      if (sectionIdsToDelete.has(s.id)) {
+        batch.delete(doc(db, 'checklist_sections', s.id))
+        sectionsCount++
+      }
+    })
+    await batch.commit()
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_deleted: tasksCount, sections_deleted: sectionsCount })
 }
 
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
