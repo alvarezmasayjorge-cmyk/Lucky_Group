@@ -1542,6 +1542,37 @@ export const runPatchV18 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_deleted: tasksCount })
 }
 
+// ─── PATCH V19: recreate Video/Image Ad Creation sections (empty) ───────────
+export const runPatchV19 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v19_recreate_video_image_sections')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const now = new Date().toISOString()
+
+  const hasVideo = sections.some(s => (s.nombre || '').toLowerCase().includes('video ad creation'))
+  const hasImage = sections.some(s => (s.nombre || '').toLowerCase().includes('image ad creation'))
+
+  const maxOrden = Math.max(...sections.map(s => s.orden || 0), 0)
+  let created = 0
+
+  if (!hasVideo) {
+    const ref = doc(collection(db, 'checklist_sections'))
+    await setDoc(ref, { nombre: 'Video Ad Creation', area: 'meta_ads', orden: maxOrden + 1, creado_en: now })
+    created++
+  }
+
+  if (!hasImage) {
+    const ref = doc(collection(db, 'checklist_sections'))
+    await setDoc(ref, { nombre: 'Image Ad Creation', area: 'meta_ads', orden: maxOrden + 2, creado_en: now })
+    created++
+  }
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, sections_created: created })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
