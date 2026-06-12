@@ -1054,8 +1054,10 @@ export const runPatchV12 = async (userId) => {
     { nombre: 'Video Ad Creation', area: 'meta_ads', orden: 6 },
     { nombre: 'Google Ads', area: 'google_ads', orden: 7 },
     { nombre: 'Website SEO/AEO Set Up', area: 'seo', orden: 8 },
-    { nombre: 'Funnels', area: 'ghl', orden: 9 },
-    { nombre: 'AI Receptionist', area: 'ghl', orden: 10 },
+    { nombre: 'Funnel', area: 'ghl', orden: 9 },
+    { nombre: 'Workflow Automation', area: 'ghl', orden: 10 },
+    { nombre: 'Tracking/Setup', area: 'ghl', orden: 11 },
+    { nombre: 'AI Receptionist', area: 'ghl', orden: 12 },
   ]
 
   const sectionMap = {} // nombre → id
@@ -1955,6 +1957,84 @@ export const runPatchV24 = async (userId) => {
   }
 
   console.log(`[v24] Ordered Funnels tasks — tasks_updated: ${updates.length}`)
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_updated: updates.length })
+}
+
+// Split the single GHL "Funnels" section into the 4-section structure from
+// Julius's sheet: Funnel -> Workflow Automation -> Tracking/Setup -> AI Receptionist.
+// Creates the two new sections, renames "Funnels" -> "Funnel", and moves each
+// task (all clients) to its target section with the right order.
+export const runPatchV26 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v26_split_ghl_sections')
+  if ((await getDoc(patchRef)).exists()) return
+
+  const now = new Date().toISOString()
+  const norm = (s) => (s || '').replace(/^\d+\.\s*/, '').trim().toLowerCase()
+
+  const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  const funnelSec = sections.find(s => s.area === 'ghl' && ['funnels', 'funnel'].includes(norm(s.nombre)))
+  if (!funnelSec) {
+    console.warn('[v26] GHL "Funnels" section not found — skipping (will retry next load).')
+    return // do NOT write guard, retry on next mount
+  }
+  const aiSec = sections.find(s => s.area === 'ghl' && norm(s.nombre) === 'ai receptionist')
+
+  // find-or-create the two new GHL sections
+  const findOrCreate = async (name, orden) => {
+    const existing = sections.find(s => s.area === 'ghl' && norm(s.nombre) === norm(name))
+    if (existing) return existing.id
+    const ref = doc(collection(db, 'checklist_sections'))
+    await setDoc(ref, { nombre: name, area: 'ghl', orden, creado_en: now })
+    return ref.id
+  }
+  const waId = await findOrCreate('Workflow Automation', 10)
+  const tsId = await findOrCreate('Tracking/Setup', 11)
+
+  // rename Funnels -> Funnel and fix section order
+  const secBatch = writeBatch(db)
+  secBatch.update(doc(db, 'checklist_sections', funnelSec.id), { nombre: 'Funnel', orden: 9 })
+  if (aiSec) secBatch.update(doc(db, 'checklist_sections', aiSec.id), { orden: 12 })
+  await secBatch.commit()
+
+  // task title -> { sectionId, orden } (canonical order from the sheet)
+  const FUNNEL = ['Build funnel according to strategy', 'Client Assets', 'Purchase Lookalike Domain', 'Client Offer', 'Tracking code installation']
+  const WORKFLOW = ['CAPI Conversion', 'Google Number Pool Conversion', 'New Lead Optin - Did not schedule', 'Booked Appointment Reminder', 'No Show/Cancelled Appointment Win-back', 'Pipeline Changed To No Show/Cancelled', 'Lead to AI Outbound Call', 'Get and Place Call: Outbound + Inbound', 'Reactivation Call: Stale Customer', 'Lead Type Updater & Aging', 'Inbound Message Internal Notification', 'Missed Call Text Back']
+  const TRACKING = ['Integration', 'Integration (Meta)', 'Integrate Domain', 'Set and Validate Dedicated Sending Domain', 'A2P Application', 'Google Lead Event Creation']
+  const AIR = ['Prompt', 'AI Receptionist Objective', 'Retell Workspace', 'Add Client Payment Method', 'Purchase Number']
+
+  const map = new Map()
+  FUNNEL.forEach((t, i) => map.set(t.toLowerCase(), { sectionId: funnelSec.id, orden: i }))
+  map.set('funnel building', { sectionId: funnelSec.id, orden: 0 }) // alias for renamed first task
+  WORKFLOW.forEach((t, i) => map.set(t.toLowerCase(), { sectionId: waId, orden: i }))
+  TRACKING.forEach((t, i) => map.set(t.toLowerCase(), { sectionId: tsId, orden: i }))
+  if (aiSec) AIR.forEach((t, i) => map.set(t.toLowerCase(), { sectionId: aiSec.id, orden: i }))
+
+  const ghlSectionIds = new Set([funnelSec.id, aiSec?.id].filter(Boolean))
+  const tasksSnap = await getDocs(collection(db, 'checklist_tasks'))
+  const updates = []
+  tasksSnap.docs.forEach(d => {
+    const t = d.data()
+    if (!ghlSectionIds.has(t.seccion_id)) return
+    const target = map.get((t.titulo || '').trim().toLowerCase())
+    if (!target) return
+    if (t.seccion_id === target.sectionId && t.orden === target.orden) return
+    updates.push({ id: d.id, seccion_id: target.sectionId, orden: target.orden })
+  })
+
+  for (let i = 0; i < updates.length; i += 400) {
+    const batch = writeBatch(db)
+    updates.slice(i, i + 400).forEach(u => batch.update(doc(db, 'checklist_tasks', u.id), {
+      seccion_id: u.seccion_id,
+      orden: u.orden,
+      actualizado_en: now,
+    }))
+    await batch.commit()
+  }
+
+  console.log(`[v26] Split GHL sections (Funnel / Workflow Automation / Tracking/Setup / AI Receptionist) — tasks_updated: ${updates.length}`)
 
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_updated: updates.length })
 }
