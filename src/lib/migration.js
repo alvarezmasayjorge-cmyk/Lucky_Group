@@ -1797,6 +1797,82 @@ export const runPatchV23 = async (userId) => {
   })
 }
 
+// Canonical order of the "Funnels" (GHL) section tasks, matching Julius's sheet:
+// Funnel -> Workflow Automation -> Tracking/Setup.
+const FUNNELS_TASK_ORDER = [
+  'Build funnel according to strategy', // sheet label: "Funnel Building"
+  'Client Assets',
+  'Purchase Lookalike Domain',
+  'Client Offer',
+  'Tracking code installation',
+  'CAPI Conversion',
+  'Google Number Pool Conversion',
+  'New Lead Optin - Did not schedule',
+  'Booked Appointment Reminder',
+  'No Show/Cancelled Appointment Win-back',
+  'Pipeline Changed To No Show/Cancelled',
+  'Lead to AI Outbound Call',
+  'Get and Place Call: Outbound + Inbound',
+  'Reactivation Call: Stale Customer',
+  'Lead Type Updater & Aging',
+  'Inbound Message Internal Notification',
+  'Missed Call Text Back',
+  'Integration',
+  'Integration (Meta)',
+  'Integrate Domain',
+  'Set and Validate Dedicated Sending Domain',
+  'A2P Application',
+  'Google Lead Event Creation',
+]
+
+// Set `orden` on every "Funnels" section task (all clients) so the board shows
+// them in Julius's sheet order. Tasks render sorted by `orden`.
+export const runPatchV24 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v24_order_funnels_tasks')
+  if ((await getDoc(patchRef)).exists()) return
+
+  const norm = (s) => (s || '').replace(/^\d+\.\s*/, '').trim().toLowerCase()
+
+  const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+  const funnelsSectionIds = new Set(
+    sectionsSnap.docs.filter(d => norm(d.data().nombre) === 'funnels').map(d => d.id)
+  )
+  if (funnelsSectionIds.size === 0) {
+    console.warn('[v24] No "Funnels" section found — skipping (will retry next load).')
+    return // do NOT write guard, retry on next mount
+  }
+
+  // title (normalized) -> position. Include alias for the renamed first task.
+  const orderIndex = new Map()
+  FUNNELS_TASK_ORDER.forEach((t, i) => orderIndex.set(t.toLowerCase(), i))
+  orderIndex.set('funnel building', 0)
+
+  const tasksSnap = await getDocs(collection(db, 'checklist_tasks'))
+  const now = new Date().toISOString()
+  const updates = []
+  tasksSnap.docs.forEach(d => {
+    const t = d.data()
+    if (!funnelsSectionIds.has(t.seccion_id)) return
+    const idx = orderIndex.get((t.titulo || '').trim().toLowerCase())
+    if (idx === undefined) return
+    if (t.orden === idx) return
+    updates.push({ id: d.id, orden: idx })
+  })
+
+  for (let i = 0; i < updates.length; i += 400) {
+    const batch = writeBatch(db)
+    updates.slice(i, i + 400).forEach(u => batch.update(doc(db, 'checklist_tasks', u.id), {
+      orden: u.orden,
+      actualizado_en: now,
+    }))
+    await batch.commit()
+  }
+
+  console.log(`[v24] Ordered Funnels tasks — tasks_updated: ${updates.length}`)
+
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_updated: updates.length })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

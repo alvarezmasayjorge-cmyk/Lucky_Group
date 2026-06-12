@@ -12,7 +12,7 @@ import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21, runPatchV22, runPatchV23 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21, runPatchV22, runPatchV23, runPatchV24 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -159,6 +159,7 @@ export default function Dashboard({ user, profile }) {
         await runPatchV21(user.uid)
         await runPatchV22(user.uid)
         await runPatchV23(user.uid)
+        await runPatchV24(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
@@ -872,7 +873,9 @@ export default function Dashboard({ user, profile }) {
         {/* Sections Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12 items-start">
           {displaySecciones.map(seccion => {
-            const secTasks = filteredTareas.filter(t => t.seccion_id === seccion.id)
+            const secTasks = filteredTareas
+              .filter(t => t.seccion_id === seccion.id)
+              .sort((a, b) => (a.orden ?? 9999) - (b.orden ?? 9999))
             if (secTasks.length === 0 && (selectedSeccion !== 'all' || hasNarrowingFilter)) return null
             const expanded = collapsedSections[seccion.id] || hasNarrowingFilter
 
