@@ -1797,6 +1797,92 @@ export const runPatchV23 = async (userId) => {
   })
 }
 
+// Resilient re-apply of the owner copy. Unlike v22/v23, this does NOT abort
+// when the Julius profile is missing: it always copies the assigned owners
+// (Karla, Jorge, Jens, Phill, ...) and only fills empty tasks with Julius if
+// that profile exists.
+export const runPatchV25 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v25_copy_owners_resilient')
+  if ((await getDoc(patchRef)).exists()) return
+
+  // 1. Source client = "Complete Wellness Chiropractic" (the template/base)
+  const clientsSnap = await getDocs(collection(db, 'clients'))
+  const source = clientsSnap.docs.find(d => d.data().name === 'Complete Wellness Chiropractic')
+  if (!source) {
+    console.warn('[v25] Source client "Complete Wellness Chiropractic" not found — skipping (will retry next load).')
+    return // do NOT write guard, retry on next mount
+  }
+  const sourceId = source.id
+
+  // 2. Julius (GoHighLevel Specialist) — optional. Do NOT abort if missing.
+  const profilesSnap = await getDocs(collection(db, 'profiles'))
+  const profs = profilesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const julius =
+    profs.find(p => p.rol_equipo === 'GoHighLevel Specialist') ||
+    profs.find(p => (p.nombre_completo || '').toLowerCase().includes('julius'))
+  const juliusId = julius ? julius.id : null
+  if (!juliusId) {
+    console.warn('[v25] Julius (GoHighLevel Specialist) profile not found — copying assigned owners only; empty tasks left as-is.')
+  }
+
+  // 3. Excluded sections: Video Ad Creation / Image Ad Creation
+  const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+  const EXCLUDED = ['video ad creation', 'image ad creation']
+  const norm = (s) => (s || '').replace(/^\d+\.\s*/, '').trim().toLowerCase()
+  const excludedSectionIds = new Set(
+    sectionsSnap.docs.filter(d => EXCLUDED.includes(norm(d.data().nombre))).map(d => d.id)
+  )
+
+  // 4. Load all tasks
+  const tasksSnap = await getDocs(collection(db, 'checklist_tasks'))
+  const allTasks = tasksSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  // 5. Desired-owner map from the source client
+  const ownerMap = new Map()
+  for (const t of allTasks) {
+    if (t.client_id !== sourceId) continue
+    if (excludedSectionIds.has(t.seccion_id)) continue
+    const key = `${t.seccion_id}|${t.titulo}`
+    if (t.responsable_id) {
+      ownerMap.set(key, { responsable_id: t.responsable_id, responsable_rol: t.responsable_rol ?? null })
+    } else if (juliusId) {
+      ownerMap.set(key, { responsable_id: juliusId, responsable_rol: 'GoHighLevel Specialist' })
+    }
+    // empty source + no Julius -> not added to map, targets left untouched
+  }
+
+  // 6. Apply to ALL clients
+  const now = new Date().toISOString()
+  const updates = []
+  for (const t of allTasks) {
+    if (excludedSectionIds.has(t.seccion_id)) continue
+    const desired = ownerMap.get(`${t.seccion_id}|${t.titulo}`)
+    if (!desired) continue
+    if (t.responsable_id === desired.responsable_id && (t.responsable_rol ?? null) === desired.responsable_rol) continue
+    updates.push({ id: t.id, desired })
+  }
+
+  for (let i = 0; i < updates.length; i += 400) {
+    const batch = writeBatch(db)
+    updates.slice(i, i + 400).forEach(u => batch.update(doc(db, 'checklist_tasks', u.id), {
+      responsable_id: u.desired.responsable_id,
+      responsable_rol: u.desired.responsable_rol,
+      actualizado_en: now,
+    }))
+    await batch.commit()
+  }
+
+  console.log(`[v25] Copied owners (resilient) — tasks_updated: ${updates.length}, julius_found: ${!!juliusId}`)
+
+  await setDoc(patchRef, {
+    applied_at: now,
+    applied_by: userId,
+    source_client: 'Complete Wellness Chiropractic',
+    julius_found: !!juliusId,
+    tasks_updated: updates.length,
+  })
+}
+
 // Canonical order of the "Funnels" (GHL) section tasks, matching Julius's sheet:
 // Funnel -> Workflow Automation -> Tracking/Setup.
 const FUNNELS_TASK_ORDER = [
