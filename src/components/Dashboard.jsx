@@ -23,6 +23,24 @@ const AREAS_WITH_ICONS = [
   { ...AREAS[4], icon: <Target className="w-4 h-4 mr-2" /> },
 ]
 
+// Service gating: when a client's service toggle is explicitly off, the related
+// tasks are hidden and excluded from the completion %. `undefined` = not
+// configured = shown (only an explicit `false` hides).
+const AREA_SERVICE = { meta_ads: 'facebook_ads', google_ads: 'google_ads', seo: 'seo' } // whole area
+const SECTION_SERVICE = { 'ai receptionist': 'ai_receptionist' } // single section (by normalized name)
+const normSecName = (s) => (s || '').replace(/^\d+\.\s*/, '').trim().toLowerCase()
+const isServiceOff = (client, serviceId) => (client?.services || {})[serviceId] === false
+const isAreaVisibleForClient = (client, areaId) => {
+  const svc = AREA_SERVICE[areaId]
+  return !(svc && isServiceOff(client, svc))
+}
+const isSectionVisibleForClient = (client, section) => {
+  if (!section) return false
+  if (!isAreaVisibleForClient(client, section.area)) return false
+  const svc = SECTION_SERVICE[normSecName(section.nombre)]
+  return !(svc && isServiceOff(client, svc))
+}
+
 export default function Dashboard({ user, profile }) {
   const [clients, setClients] = useState([])
   const [secciones, setSecciones] = useState([])
@@ -99,6 +117,13 @@ export default function Dashboard({ user, profile }) {
     setCollapsedSections({})
     if (!activeClient) setActiveView('board')
   }, [activeArea, activeClient])
+
+  // If the active area is hidden for this client (service off), fall back to Onboarding
+  useEffect(() => {
+    if (activeClient && !isAreaVisibleForClient(activeClient, activeArea)) {
+      setActiveArea('onboarding')
+    }
+  }, [activeClient, activeArea])
 
   // Deep link: navigate to task from URL ?task=ID
   useEffect(() => {
@@ -359,24 +384,37 @@ export default function Dashboard({ user, profile }) {
   // Per-client task stats for master view (memoized)
   const getTaskStatus = (t) => t.status ?? (t.completed ? 'completed' : 'pending')
 
-  const sectionIdSet = useMemo(() => new Set(secciones.map(s => s.id)), [secciones])
+  const sectionById = useMemo(() => {
+    const m = {}
+    for (const s of secciones) m[s.id] = s
+    return m
+  }, [secciones])
+
+  const clientsById = useMemo(() => {
+    const m = {}
+    for (const c of clients) m[c.id] = c
+    return m
+  }, [clients])
 
   const clientStats = useMemo(() => {
     const map = {}
     for (const t of allTareas) {
-      // Only count tasks that belong to an existing section (orphaned tasks are invisible in boards)
-      if (!sectionIdSet.has(t.seccion_id)) continue
+      // Only count tasks in an existing section (orphaned tasks are invisible in boards)
+      const section = sectionById[t.seccion_id]
+      if (!section) continue
+      // Skip tasks whose service is turned off for this client
+      if (!isSectionVisibleForClient(clientsById[t.client_id], section)) continue
       if (!map[t.client_id]) map[t.client_id] = { total: 0, completed: 0 }
       map[t.client_id].total++
       if (getTaskStatus(t) === 'completed') map[t.client_id].completed++
     }
     return map
-  }, [allTareas, sectionIdSet])
+  }, [allTareas, sectionById, clientsById])
 
   // Client view data (memoized)
   const areaSections = useMemo(
-    () => secciones.filter(s => s.area === activeArea),
-    [secciones, activeArea]
+    () => secciones.filter(s => s.area === activeArea && isSectionVisibleForClient(activeClient, s)),
+    [secciones, activeArea, activeClient]
   )
 
   const clientTareas = useMemo(
@@ -389,6 +427,7 @@ export default function Dashboard({ user, profile }) {
     return clientTareas.filter(t => {
       const sectionObj = secciones.find(s => s.id === t.seccion_id)
       if (!sectionObj || sectionObj.area !== activeArea) return false
+      if (!isSectionVisibleForClient(activeClient, sectionObj)) return false
       if (selectedSeccion !== 'all' && t.seccion_id !== selectedSeccion) return false
       if (selectedRol !== 'all' && t.responsable_rol !== selectedRol) return false
       if (selectedResponsable !== 'all' && t.responsable_id !== selectedResponsable) return false
@@ -396,7 +435,7 @@ export default function Dashboard({ user, profile }) {
       if (lowerSearch && !t.titulo.toLowerCase().includes(lowerSearch)) return false
       return true
     })
-  }, [clientTareas, secciones, activeArea, selectedSeccion, selectedRol, selectedResponsable, hideCompleted, searchQuery])
+  }, [clientTareas, secciones, activeArea, activeClient, selectedSeccion, selectedRol, selectedResponsable, hideCompleted, searchQuery])
 
   const displaySecciones = useMemo(
     () => selectedSeccion === 'all' ? areaSections : areaSections.filter(s => s.id === selectedSeccion),
@@ -686,7 +725,7 @@ export default function Dashboard({ user, profile }) {
         <div className="mb-8 flex flex-col sm:flex-row justify-center items-center gap-3">
           {/* Area tabs */}
           <div className={`bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200 inline-flex space-x-1 ${activeView === 'team' ? 'opacity-40 pointer-events-none' : ''}`}>
-            {AREAS_WITH_ICONS.map(area => (
+            {AREAS_WITH_ICONS.filter(area => isAreaVisibleForClient(activeClient, area.id)).map(area => (
               <button
                 key={area.id}
                 onClick={() => { setActiveArea(area.id); setActiveView('board') }}
