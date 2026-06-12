@@ -12,7 +12,7 @@ import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21 } from '../lib/migration'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21, runPatchV22 } from '../lib/migration'
 import { AREAS } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -157,6 +157,7 @@ export default function Dashboard({ user, profile }) {
         await runPatchV19(user.uid)
         await runPatchV20(user.uid)
         await runPatchV21(user.uid)
+        await runPatchV22(user.uid)
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
@@ -397,6 +398,13 @@ export default function Dashboard({ user, profile }) {
     () => selectedSeccion === 'all' ? areaSections : areaSections.filter(s => s.id === selectedSeccion),
     [areaSections, selectedSeccion]
   )
+
+  // When a narrowing filter is active, force sections open so matches are visible
+  const hasNarrowingFilter =
+    searchQuery.trim() !== '' ||
+    selectedRol !== 'all' ||
+    selectedResponsable !== 'all' ||
+    selectedSeccion !== 'all'
 
   const totalTasks = filteredTareas.length
   const completedTasks = filteredTareas.filter(t => getTaskStatus(t) === 'completed').length
@@ -864,7 +872,8 @@ export default function Dashboard({ user, profile }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12 items-start">
           {displaySecciones.map(seccion => {
             const secTasks = filteredTareas.filter(t => t.seccion_id === seccion.id)
-            if (secTasks.length === 0 && selectedSeccion !== 'all') return null
+            if (secTasks.length === 0 && (selectedSeccion !== 'all' || hasNarrowingFilter)) return null
+            const expanded = collapsedSections[seccion.id] || hasNarrowingFilter
 
             // Count against unfiltered section tasks to show real progress
             const rawSecTasks = clientTareas.filter(t => {
@@ -920,11 +929,11 @@ export default function Dashboard({ user, profile }) {
                       </button>
                       <ChevronDown
                         onClick={() => toggleSection(seccion.id)}
-                        className={`w-5 h-5 text-gray-400 cursor-pointer transition-transform duration-200 ${collapsedSections[seccion.id] ? '' : '-rotate-90'}`}
+                        className={`w-5 h-5 text-gray-400 cursor-pointer transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`}
                       />
                     </div>
                   </div>
-                  {secTotal > 0 && collapsedSections[seccion.id] && (
+                  {secTotal > 0 && expanded && (
                     <div className="w-full bg-gray-100 h-1.5 mt-4 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all duration-700 ${secProgress === 100 ? 'bg-green-500' : 'bg-brand-primary'}`}
@@ -1009,7 +1018,7 @@ export default function Dashboard({ user, profile }) {
                   </div>
                 )}
 
-                {collapsedSections[seccion.id] && (
+                {expanded && (
                   <div className="divide-y divide-gray-100/80 bg-white">
                     {secTasks.length > 0 ? (
                       secTasks.map(task => (

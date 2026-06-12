@@ -1629,6 +1629,87 @@ export const runPatchV21 = async (userId) => {
   })
 }
 
+export const runPatchV22 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v22_copy_owners_from_complete_wellness')
+  const patchSnap = await getDoc(patchRef)
+  if (patchSnap.exists()) return
+
+  // 1. Source client = "Complete Wellness Chiropractic" (the template/base)
+  const clientsSnap = await getDocs(collection(db, 'clients'))
+  const source = clientsSnap.docs.find(d => d.data().name === 'Complete Wellness Chiropractic')
+  if (!source) {
+    console.warn('[v22] Source client "Complete Wellness Chiropractic" not found — skipping (will retry next load).')
+    return // do NOT write guard, retry on next mount
+  }
+  const sourceId = source.id
+
+  // 2. Julius = profile whose rol_equipo is "GoHighLevel Specialist"
+  const profilesSnap = await getDocs(collection(db, 'profiles'))
+  const julius = profilesSnap.docs.find(d => d.data().rol_equipo === 'GoHighLevel Specialist')
+  if (!julius) {
+    console.warn('[v22] GoHighLevel Specialist profile (Julius) not found — skipping (will retry next load).')
+    return // do NOT write guard, retry on next mount
+  }
+  const juliusId = julius.id
+
+  // 3. Excluded sections: Video Ad Creation / Image Ad Creation (normalize "6. " prefix)
+  const sectionsSnap = await getDocs(collection(db, 'checklist_sections'))
+  const EXCLUDED = ['video ad creation', 'image ad creation']
+  const norm = (s) => (s || '').replace(/^\d+\.\s*/, '').trim().toLowerCase()
+  const excludedSectionIds = new Set(
+    sectionsSnap.docs.filter(d => EXCLUDED.includes(norm(d.data().nombre))).map(d => d.id)
+  )
+
+  // 4. Load all tasks
+  const tasksSnap = await getDocs(collection(db, 'checklist_tasks'))
+  const allTasks = tasksSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  // 5. Desired-owner map from the source client, keyed by `${seccion_id}|${titulo}`
+  const ownerMap = new Map()
+  for (const t of allTasks) {
+    if (t.client_id !== sourceId) continue
+    if (excludedSectionIds.has(t.seccion_id)) continue
+    const key = `${t.seccion_id}|${t.titulo}`
+    if (t.responsable_id) {
+      ownerMap.set(key, { responsable_id: t.responsable_id, responsable_rol: t.responsable_rol ?? null })
+    } else {
+      // empty in Complete Wellness -> Julius (GoHighLevel Specialist)
+      ownerMap.set(key, { responsable_id: juliusId, responsable_rol: 'GoHighLevel Specialist' })
+    }
+  }
+
+  // 6. Apply to ALL clients (incl. Complete Wellness, to fill its own empties with Julius)
+  const now = new Date().toISOString()
+  const updates = []
+  for (const t of allTasks) {
+    if (excludedSectionIds.has(t.seccion_id)) continue
+    const desired = ownerMap.get(`${t.seccion_id}|${t.titulo}`)
+    if (!desired) continue
+    if (t.responsable_id === desired.responsable_id && (t.responsable_rol ?? null) === desired.responsable_rol) continue
+    updates.push({ id: t.id, desired })
+  }
+
+  // 7. Commit in batches of 400
+  for (let i = 0; i < updates.length; i += 400) {
+    const batch = writeBatch(db)
+    updates.slice(i, i + 400).forEach(u => batch.update(doc(db, 'checklist_tasks', u.id), {
+      responsable_id: u.desired.responsable_id,
+      responsable_rol: u.desired.responsable_rol,
+      actualizado_en: now,
+    }))
+    await batch.commit()
+  }
+
+  console.log(`[v22] Copied owners from Complete Wellness Chiropractic — tasks_updated: ${updates.length}`)
+
+  await setDoc(patchRef, {
+    applied_at: now,
+    applied_by: userId,
+    source_client: 'Complete Wellness Chiropractic',
+    tasks_updated: updates.length,
+  })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
