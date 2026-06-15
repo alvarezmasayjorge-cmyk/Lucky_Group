@@ -2109,6 +2109,47 @@ export const runPatchV27 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
 }
 
+// ─── PATCH V28: delete 4 churned clients and all their tasks ─────────────────
+export const runPatchV28 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v28_delete_churned_clients')
+  if ((await getDoc(patchRef)).exists()) return
+
+  const now = new Date().toISOString()
+  const NAMES_TO_DELETE = [
+    'Main Street Chiropractic',
+    'All Dry Services of North Las Vegas',
+    'All Around Asphalt',
+    'Green Z Remodeling',
+  ]
+
+  const [clientsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const targets = clientsSnap.docs.filter(d => NAMES_TO_DELETE.includes(d.data().name))
+  const targetIds = new Set(targets.map(d => d.id))
+
+  const taskDocs = tasksSnap.docs.filter(d => targetIds.has(d.data().client_id))
+
+  // Delete tasks in batches of 400
+  for (let i = 0; i < taskDocs.length; i += 400) {
+    const batch = writeBatch(db)
+    taskDocs.slice(i, i + 400).forEach(d => batch.delete(d.ref))
+    await batch.commit()
+  }
+
+  // Delete client documents
+  for (let i = 0; i < targets.length; i += 400) {
+    const batch = writeBatch(db)
+    targets.slice(i, i + 400).forEach(d => batch.delete(d.ref))
+    await batch.commit()
+  }
+
+  console.log(`[v28] Deleted ${targets.length} clients and ${taskDocs.length} tasks`)
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_deleted: targets.length, tasks_deleted: taskDocs.length })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
