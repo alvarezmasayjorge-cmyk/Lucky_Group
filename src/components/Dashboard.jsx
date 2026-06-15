@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc, addDoc, deleteDoc, writeBatch } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings, Pencil, Trash2, ClipboardList } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings, Pencil, Trash2, ClipboardList, Handshake } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -19,14 +19,15 @@ const AREAS_WITH_ICONS = [
   { ...AREAS[0], icon: <ClipboardList className="w-4 h-4 mr-2" /> },
   { ...AREAS[1], icon: <Megaphone className="w-4 h-4 mr-2" /> },
   { ...AREAS[2], icon: <Search className="w-4 h-4 mr-2" /> },
-  { ...AREAS[3], icon: <Globe className="w-4 h-4 mr-2" /> },
-  { ...AREAS[4], icon: <Target className="w-4 h-4 mr-2" /> },
+  { ...AREAS[3], icon: <Handshake className="w-4 h-4 mr-2" /> },
+  { ...AREAS[4], icon: <Globe className="w-4 h-4 mr-2" /> },
+  { ...AREAS[5], icon: <Target className="w-4 h-4 mr-2" /> },
 ]
 
 // Service gating: when a client's service toggle is explicitly off, the related
 // tasks are hidden and excluded from the completion %. `undefined` = not
 // configured = shown (only an explicit `false` hides).
-const AREA_SERVICE = { meta_ads: 'facebook_ads', google_ads: 'google_ads', seo: 'seo' } // whole area
+const AREA_SERVICE = { meta_ads: 'facebook_ads', google_ads: 'google_ads', lsa: 'lsa', seo: 'seo' } // whole area
 const SECTION_SERVICE = { 'ai receptionist': 'ai_receptionist' } // single section (by normalized name)
 const normSecName = (s) => (s || '').replace(/^\d+\.\s*/, '').trim().toLowerCase()
 const isServiceOff = (client, serviceId) => (client?.services || {})[serviceId] === false
@@ -913,6 +914,15 @@ export default function Dashboard({ user, profile }) {
 
         {/* Sections Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12 items-start">
+          {activeArea === 'lsa' && displaySecciones.length === 0 && (
+            <div className="col-span-2 flex flex-col items-center justify-center py-20 text-center">
+              <Handshake className="w-12 h-12 text-sky-400 mb-4" />
+              <h3 className="text-lg font-bold text-gray-700">LSA Task List</h3>
+              <p className="text-sm text-gray-400 mt-2">
+                Local Services Ads tasks will appear here once sections are added.
+              </p>
+            </div>
+          )}
           {displaySecciones.map(seccion => {
             const secTasks = filteredTareas
               .filter(t => t.seccion_id === seccion.id)
