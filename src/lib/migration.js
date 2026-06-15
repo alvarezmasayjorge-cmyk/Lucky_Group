@@ -2039,6 +2039,76 @@ export const runPatchV26 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_updated: updates.length })
 }
 
+// ─── PATCH V27: create global LSA section + seed 3 tasks for every client ────
+export const runPatchV27 = async (userId) => {
+  const patchRef = doc(db, 'patches', 'v27_add_lsa_section')
+  if ((await getDoc(patchRef)).exists()) return
+
+  const now = new Date().toISOString()
+
+  const [clientsSnap, sectionsSnap, tasksSnap] = await Promise.all([
+    getDocs(collection(db, 'clients')),
+    getDocs(collection(db, 'checklist_sections')),
+    getDocs(collection(db, 'checklist_tasks')),
+  ])
+
+  const clients = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const sections = sectionsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  // Find or create the global LSA section
+  let lsaSection = sections.find(s => s.area === 'lsa' && s.nombre === 'LSA')
+  if (!lsaSection) {
+    const ref = doc(collection(db, 'checklist_sections'))
+    await setDoc(ref, { nombre: 'LSA', area: 'lsa', orden: 5, creado_en: now })
+    lsaSection = { id: ref.id, nombre: 'LSA', area: 'lsa' }
+  }
+
+  // Build dedup set: "clientId|sectionId|titulo"
+  const existingKeys = new Set(
+    tasksSnap.docs.map(d => {
+      const t = d.data()
+      return `${t.client_id}|${t.seccion_id}|${t.titulo}`
+    })
+  )
+
+  const LSA_TASKS = [
+    { title: 'Get LSA Approved', role: 'Google Specialist' },
+    { title: 'Verify Settings',  role: 'Google Specialist' },
+    { title: 'Launch Campaigns', role: 'Google Specialist' },
+  ]
+
+  let count = 0
+  for (let i = 0; i < clients.length; i += 4) {
+    const batch = writeBatch(db)
+    for (const client of clients.slice(i, i + 4)) {
+      LSA_TASKS.forEach((tpl, idx) => {
+        const key = `${client.id}|${lsaSection.id}|${tpl.title}`
+        if (existingKeys.has(key)) return
+        const taskRef = doc(collection(db, 'checklist_tasks'))
+        batch.set(taskRef, {
+          titulo: tpl.title,
+          responsable_rol: tpl.role,
+          seccion_id: lsaSection.id,
+          client_id: client.id,
+          status: 'pending',
+          completed: false,
+          prioridad: 'medium',
+          responsable_id: null,
+          creado_por: userId,
+          creado_en: now,
+          actualizado_en: now,
+          orden: idx,
+        })
+        count++
+      })
+    }
+    await batch.commit()
+  }
+
+  console.log(`[v27] LSA section seeded — tasks_added: ${count}`)
+  await setDoc(patchRef, { applied_at: now, applied_by: userId, tasks_added: count })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();

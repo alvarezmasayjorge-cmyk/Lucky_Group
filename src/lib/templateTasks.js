@@ -8,6 +8,8 @@ export const TEMPLATE_SECTIONS = [
   { name: 'Video Ad Materials', area: 'meta_ads' },
   // ── Google Ads ──
   { name: 'Google Ads', area: 'google_ads' },
+  // ── LSA ──
+  { name: 'LSA', area: 'lsa' },
   // ── SEO / AEO ──
   { name: 'Website SEO/AEO Set Up', area: 'seo' },
   // ── Go High Level ──
@@ -70,6 +72,11 @@ export const TEMPLATE_TASKS = [
   { sectionName: 'Google Ads', title: 'Get LSA Approved', role: 'Project Manager' },
   { sectionName: 'Google Ads', title: 'Launch Campaigns', role: 'Google Specialist' },
   { sectionName: 'Google Ads', title: 'Launch Campaigns (LSA)', role: 'Project Manager' },
+
+  // ── LSA ──
+  { sectionName: 'LSA', title: 'Get LSA Approved', role: 'Google Specialist' },
+  { sectionName: 'LSA', title: 'Verify Settings', role: 'Google Specialist' },
+  { sectionName: 'LSA', title: 'Launch Campaigns', role: 'Google Specialist' },
 
   // ── Website SEO/AEO Set Up ──
   { sectionName: 'Website SEO/AEO Set Up', title: 'Add luckyconsultinggroup@gmail.com & Jens as manager for GBP', role: 'Project Manager' },
