@@ -19,6 +19,15 @@ export const ROLE_BADGE_STYLES = {
 }
 
 export const PLATFORMS = [
+  { id: 'lsa',             label: 'LSA' },
+  { id: 'google_ads',      label: 'Google Ads' },
+  { id: 'facebook_ads',    label: 'Facebook Ads' },
+  { id: 'ai_receptionist', label: 'AI Receptionist' },
+  { id: 'seo',             label: 'SEO' },
+  { id: 'website_built',   label: 'Website Built' },
+]
+
+export const BUDGET_PLATFORMS = [
   { id: 'lsa',         label: 'LSA' },
   { id: 'google_ads',  label: 'Google Ads' },
   { id: 'facebook_ads', label: 'Facebook Ads' },

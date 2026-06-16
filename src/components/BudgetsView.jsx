@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Wallet, ChevronDown, ChevronRight } from 'lucide-react'
-import { PLATFORMS } from '../lib/constants'
+import { BUDGET_PLATFORMS as PLATFORMS } from '../lib/constants'
 
 const CURRENCIES = ['USD', 'EUR', 'MXN', 'GBP', 'COP', 'CAD', 'AUD']
 

@@ -59,6 +59,7 @@ export default function Dashboard({ user, profile }) {
   const [activeArea, setActiveArea] = useState('onboarding')
   const [activeView, setActiveView] = useState('board') // 'board' | 'team'
   const [masterView, setMasterView] = useState('table') // 'table' | 'matrix'
+  const [clientStatusFilter, setClientStatusFilter] = useState('active') // 'active' | 'inactive'
 
   // Filters
   const [selectedSeccion, setSelectedSeccion] = useState('all')
@@ -266,6 +267,17 @@ export default function Dashboard({ user, profile }) {
     }
   }, [])
 
+  const handleToggleClientStatus = useCallback(async (clientId, isCurrentlyActive) => {
+    try {
+      await updateDoc(doc(db, 'clients', clientId), {
+        active: !isCurrentlyActive,
+        actualizado_en: new Date().toISOString(),
+      })
+    } catch (e) {
+      console.error('Error toggling client status:', e)
+    }
+  }, [])
+
   const handleNavigateToTask = useCallback((client, task, section) => {
     setActiveClient(client)
     setActiveArea(section?.area || 'onboarding')
@@ -414,6 +426,11 @@ export default function Dashboard({ user, profile }) {
     return map
   }, [allTareas, sectionById, clientsById])
 
+  const filteredClients = useMemo(
+    () => clients.filter(c => clientStatusFilter === 'inactive' ? c.active === false : c.active !== false),
+    [clients, clientStatusFilter]
+  )
+
   // Client view data (memoized)
   const areaSections = useMemo(
     () => secciones.filter(s => s.area === activeArea && isSectionVisibleForClient(activeClient, s)),
@@ -529,9 +546,22 @@ export default function Dashboard({ user, profile }) {
             <div>
               <h2 className="text-2xl font-black text-gray-900 flex items-center">
                 <Users className="w-6 h-6 mr-2 text-brand-primary" />
-                Active Clients
+                Clients
               </h2>
-              <p className="text-gray-500 mt-1">Manage all client workspaces from this master sheet.</p>
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={() => setClientStatusFilter('active')}
+                  className={`px-4 py-1.5 rounded-full text-sm font-bold border transition-all ${clientStatusFilter === 'active' ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-gray-500 border-gray-300 hover:border-gray-400'}`}
+                >
+                  Active
+                </button>
+                <button
+                  onClick={() => setClientStatusFilter('inactive')}
+                  className={`px-4 py-1.5 rounded-full text-sm font-bold border transition-all ${clientStatusFilter === 'inactive' ? 'bg-gray-700 text-white border-gray-700 shadow-sm' : 'bg-white text-gray-500 border-gray-300 hover:border-gray-400'}`}
+                >
+                  Inactive
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               {/* View toggle */}
@@ -578,7 +608,7 @@ export default function Dashboard({ user, profile }) {
 
           {masterView === 'matrix' ? (
             <MatrixView
-              clients={clients}
+              clients={filteredClients}
               allTareas={allTareas}
               secciones={secciones}
               onOpenClient={(client, taskId, area) => {
@@ -589,9 +619,9 @@ export default function Dashboard({ user, profile }) {
               }}
             />
           ) : masterView === 'budgets' ? (
-            <BudgetsView clients={clients} onSaveBudget={handleSaveBudget} />
+            <BudgetsView clients={filteredClients} onSaveBudget={handleSaveBudget} />
           ) : masterView === 'services' ? (
-            <ServicesView clients={clients} onToggleService={handleToggleService} />
+            <ServicesView clients={filteredClients} onToggleService={handleToggleService} />
           ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
@@ -605,18 +635,18 @@ export default function Dashboard({ user, profile }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {clients.length === 0 ? (
+                {filteredClients.length === 0 ? (
                   <tr>
                     <td colSpan="4" className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Users className="w-10 h-10 text-gray-200" />
-                        <p className="text-gray-500 font-medium">No clients yet.</p>
-                        <p className="text-gray-400 text-sm">Click "New Client" to get started.</p>
+                        <p className="text-gray-500 font-medium">No {clientStatusFilter} clients.</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  clients.map(client => {
+                  filteredClients.map(client => {
+                    const isActive = client.active !== false
                     const stats = clientStats[client.id] || { total: 0, completed: 0 }
                     const pct = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100)
 
@@ -640,13 +670,22 @@ export default function Dashboard({ user, profile }) {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => setActiveClient(client)}
-                            className="text-sm font-bold text-brand-primary hover:text-brand-dark hover:underline flex items-center justify-end w-full"
-                          >
-                            View Board
-                            <BarChart3 className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </button>
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={() => handleToggleClientStatus(client.id, isActive)}
+                              title={isActive ? 'Mark as Inactive' : 'Mark as Active'}
+                              className={`text-xs font-bold px-3 py-1 rounded-full border transition-all ${isActive ? 'text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100' : 'text-gray-500 border-gray-200 bg-gray-50 hover:bg-gray-100'}`}
+                            >
+                              {isActive ? 'Active' : 'Inactive'}
+                            </button>
+                            <button
+                              onClick={() => setActiveClient(client)}
+                              className="text-sm font-bold text-brand-primary hover:text-brand-dark hover:underline flex items-center"
+                            >
+                              View Board
+                              <BarChart3 className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
