@@ -6,7 +6,7 @@ function getDateSlice(fechaLimite) {
   return fechaLimite.split('T')[0]
 }
 
-export default function NotificationBell({ allTareas, clients, secciones, onNavigate }) {
+export default function NotificationBell({ allTareas, clients, secciones, onNavigate, userRole }) {
   const [isOpen, setIsOpen] = useState(false)
   const ref = useRef(null)
 
@@ -31,6 +31,7 @@ export default function NotificationBell({ allTareas, clients, secciones, onNavi
   for (const task of allTareas) {
     const status = task.status ?? (task.completed ? 'completed' : 'pending')
     if (status === 'completed' || !task.fecha_limite) continue
+    if (userRole && task.responsable_rol !== userRole) continue
     const d = getDateSlice(task.fecha_limite)
     if (d < todayStr) overdue.push(task)
     else if (d === todayStr) dueToday.push(task)

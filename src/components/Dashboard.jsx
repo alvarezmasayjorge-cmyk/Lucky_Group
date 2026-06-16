@@ -529,6 +529,7 @@ export default function Dashboard({ user, profile }) {
                 clients={clients}
                 secciones={secciones}
                 onNavigate={handleNavigateToTask}
+                userRole={profile?.rol_equipo}
               />
               <button
                 onClick={handleSignOut}
