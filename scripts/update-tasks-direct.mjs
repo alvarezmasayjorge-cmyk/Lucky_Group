@@ -1,9 +1,17 @@
 #!/usr/bin/env node
 
 import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 
-const PROJECT_ID = 'lucky-group-consultation';
-const API_KEY = 'AIzaSyCBRvlRYCi58a2B9aXXFyuFhGvvK-uT9kk';
+dotenv.config();
+
+const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || 'lucky-group-consultation';
+const API_KEY = process.env.VITE_FIREBASE_API_KEY;
+
+if (!API_KEY) {
+  console.error('❌ Error: VITE_FIREBASE_API_KEY no está definido en .env');
+  process.exit(1);
+}
 
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
