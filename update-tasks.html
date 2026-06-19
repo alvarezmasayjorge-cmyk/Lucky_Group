@@ -80,16 +80,24 @@
                 statusDiv.textContent = log;
 
                 // Inicializar Firebase
-                // IMPORTANTE: Estas credenciales deben venir del archivo .env de la aplicación
-                // NO deben estar hardcodeadas en archivos públicos como este
+                // ⚠️ IMPORTANTE: No hardcodees credenciales en archivos públicos
+                // Las credenciales vienen del archivo .env (solo local, nunca en Git)
                 const firebaseConfig = {
-                    apiKey: "AIzaSyBPbwHR_3LIv0jpRHGU8iYZtNY7YXm3yMA",
+                    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "CONFIGURE_YOUR_API_KEY_IN_ENV_FILE",
                     authDomain: "lucky-group-consultation.firebaseapp.com",
                     projectId: "lucky-group-consultation",
                     storageBucket: "lucky-group-consultation.firebasestorage.app",
                     messagingSenderId: "1034024430502",
                     appId: "1:1034024430502:web:a4c539a81857dc308ebd67"
                 };
+
+                if (firebaseConfig.apiKey === "CONFIGURE_YOUR_API_KEY_IN_ENV_FILE") {
+                    log += '❌ Error: VITE_FIREBASE_API_KEY no está configurada en .env\n';
+                    statusDiv.textContent = log;
+                    statusDiv.className = 'status error';
+                    btn.disabled = false;
+                    return;
+                }
 
                 const app = initializeApp(firebaseConfig);
                 const db = getFirestore(app);
