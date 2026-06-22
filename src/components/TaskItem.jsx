@@ -2,7 +2,7 @@ import { memo, useState } from 'react'
 import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle, X, Link2, Share2 } from 'lucide-react'
 import { db } from '../lib/firebase'
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
-import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG, todayLocalISO, dateSlice } from '../lib/constants'
+import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG } from '../lib/constants'
 
 function StatusIcon({ status }) {
   if (status === 'completed') return <CheckCircle2 className="w-[22px] h-[22px] fill-green-50 text-green-500" />
@@ -18,10 +18,8 @@ function TaskItem({ task, profiles, onEdit, isHighlighted, clientName, isLSATask
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending
   const priorityCfg = PRIORITY_CONFIG[task.prioridad] || PRIORITY_CONFIG.medium
 
-  // Overdue = strictly before today (date-only, local). A task due today is not
-  // overdue — matches the alert bell's "Due Today" bucket.
   const isOverdue = task.fecha_limite && status !== 'completed'
-    ? dateSlice(task.fecha_limite) < todayLocalISO()
+    ? new Date(task.fecha_limite) < new Date()
     : false
 
   const handleCycleStatus = async () => {
