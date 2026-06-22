@@ -2,7 +2,7 @@ import { memo, useState } from 'react'
 import { CheckCircle2, Circle, Clock, Edit2, Trash2, AlertCircle, X, Link2, Share2 } from 'lucide-react'
 import { db } from '../lib/firebase'
 import { doc, deleteDoc, updateDoc } from 'firebase/firestore'
-import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG } from '../lib/constants'
+import { ROLE_BADGE_STYLES, PRIORITY_CONFIG, STATUS_CONFIG, todayLocalISO, dateSlice } from '../lib/constants'
 
 function StatusIcon({ status }) {
   if (status === 'completed') return <CheckCircle2 className="w-[22px] h-[22px] fill-green-50 text-green-500" />
@@ -10,7 +10,7 @@ function StatusIcon({ status }) {
   return <Circle className="w-[22px] h-[22px] text-gray-300 hover:text-amber-400" />
 }
 
-function TaskItem({ task, profiles, onEdit, isHighlighted, clientName }) {
+function TaskItem({ task, profiles, onEdit, isHighlighted, clientName, isLSATask, isSelected, onSelectLSA }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [copied, setCopied] = useState(false)
   const profile = profiles.find(p => p.id === task.responsable_id)
@@ -18,8 +18,10 @@ function TaskItem({ task, profiles, onEdit, isHighlighted, clientName }) {
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending
   const priorityCfg = PRIORITY_CONFIG[task.prioridad] || PRIORITY_CONFIG.medium
 
+  // Overdue = strictly before today (date-only, local). A task due today is not
+  // overdue — matches the alert bell's "Due Today" bucket.
   const isOverdue = task.fecha_limite && status !== 'completed'
-    ? new Date(task.fecha_limite) < new Date()
+    ? dateSlice(task.fecha_limite) < todayLocalISO()
     : false
 
   const handleCycleStatus = async () => {
@@ -62,9 +64,19 @@ function TaskItem({ task, profiles, onEdit, isHighlighted, clientName }) {
   return (
     <div
       id={`task-${task.id}`}
-      className={`flex items-start justify-between p-4 bg-white hover:bg-gray-50 transition-all duration-200 group border-b border-gray-100 last:border-b-0 ${statusCfg.rowOpacity} ${isHighlighted ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+      className={`flex items-start justify-between p-4 bg-white hover:bg-gray-50 transition-all duration-200 group border-b border-gray-100 last:border-b-0 ${statusCfg.rowOpacity} ${isHighlighted ? 'ring-2 ring-blue-400 bg-blue-50' : ''} ${isSelected ? 'bg-blue-100 ring-2 ring-blue-400' : ''}`}
     >
       <div className="flex items-start flex-1 min-w-0 pr-4">
+
+        {/* LSA Checkbox - only show for LSA tasks */}
+        {isLSATask && onSelectLSA && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onSelectLSA(task.id)}
+            className="w-4 h-4 mt-1.5 mr-3 accent-blue-600 cursor-pointer flex-shrink-0"
+          />
+        )}
 
         {/* Priority dot */}
         <span

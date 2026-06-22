@@ -13,7 +13,7 @@ import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
 import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21, runPatchV22, runPatchV23, runPatchV24, runPatchV25, runPatchV26, runPatchV27, runPatchV28 } from '../lib/migration'
-import { AREAS } from '../lib/constants'
+import { AREAS, ROLES } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
   { ...AREAS[0], icon: <ClipboardList className="w-4 h-4 mr-2" /> },
@@ -40,6 +40,12 @@ const isSectionVisibleForClient = (client, section) => {
   if (!isAreaVisibleForClient(client, section.area)) return false
   const svc = SECTION_SERVICE[normSecName(section.nombre)]
   return !(svc && isServiceOff(client, svc))
+}
+const isLSATask = (task, section) => {
+  const lsaPattern = /lsa/i
+  const hasLSAInTitle = lsaPattern.test(task.titulo)
+  const hasLSAInDesc = lsaPattern.test(task.descripcion || '')
+  return section?.area === 'google_ads' && (hasLSAInTitle || hasLSAInDesc)
 }
 
 export default function Dashboard({ user, profile }) {
@@ -90,6 +96,10 @@ export default function Dashboard({ user, profile }) {
   const toggleRole = useCallback((role) => {
     setCollapsedRoles(prev => ({ ...prev, [role]: !prev[role] }))
   }, [])
+
+  // Bulk delete LSA tasks
+  const [selectedLSATaskIds, setSelectedLSATaskIds] = useState(new Set())
+  const [bulkDeleteLSAConfirm, setBulkDeleteLSAConfirm] = useState(false)
 
   const expandAll = useCallback(() => {
     setCollapsedSections(prev => {
@@ -394,6 +404,32 @@ export default function Dashboard({ user, profile }) {
     }
   }, [clients, bulkSelectedClients])
 
+  const handleBulkDeleteLSA = useCallback(async () => {
+    const taskIds = Array.from(selectedLSATaskIds)
+    if (taskIds.length === 0) return
+    for (let i = 0; i < taskIds.length; i += 100) {
+      const batch = writeBatch(db)
+      taskIds.slice(i, i + 100).forEach(taskId => {
+        batch.delete(doc(db, 'checklist_tasks', taskId))
+      })
+      await batch.commit()
+    }
+    setSelectedLSATaskIds(new Set())
+    setBulkDeleteLSAConfirm(false)
+  }, [selectedLSATaskIds])
+
+  const toggleLSATaskSelection = useCallback((taskId) => {
+    setSelectedLSATaskIds(prev => {
+      const next = new Set(prev)
+      if (next.has(taskId)) {
+        next.delete(taskId)
+      } else {
+        next.add(taskId)
+      }
+      return next
+    })
+  }, [])
+
   // --- DERIVED DATA ---
 
   // Per-client task stats for master view (memoized)
@@ -529,6 +565,7 @@ export default function Dashboard({ user, profile }) {
                 clients={clients}
                 secciones={secciones}
                 onNavigate={handleNavigateToTask}
+                userId={profile?.id}
                 userRole={profile?.rol_equipo}
               />
               <button
@@ -750,6 +787,8 @@ export default function Dashboard({ user, profile }) {
               clients={clients}
               secciones={secciones}
               onNavigate={handleNavigateToTask}
+              userId={profile?.id}
+              userRole={profile?.rol_equipo}
             />
             <button
               onClick={handleSignOut}
@@ -800,7 +839,7 @@ export default function Dashboard({ user, profile }) {
 
         {/* ── TEAM VIEW ── */}
         {activeView === 'team' && (() => {
-          const ROLES_ORDER = ['Video Editor/Meta Specialist', 'Google Specialist', 'GoHighLevel Specialist', 'Project Manager', 'Executive Assistant', 'CEO']
+          const ROLES_ORDER = ROLES
           // Use ALL tasks across all clients
           const inProgressAll = allTareas.filter(t => getTaskStatus(t) === 'in_progress')
           const pendingAll    = allTareas.filter(t => getTaskStatus(t) === 'pending')
@@ -1117,17 +1156,43 @@ export default function Dashboard({ user, profile }) {
 
                 {expanded && (
                   <div className="divide-y divide-gray-100/80 bg-white">
+                    {seccion.area === 'google_ads' && selectedLSATaskIds.size > 0 && (
+                      <div className="flex items-center gap-3 px-6 py-3 bg-blue-50 border-b border-blue-200">
+                        <span className="text-sm font-semibold text-blue-700 flex-1">{selectedLSATaskIds.size} LSA task{selectedLSATaskIds.size !== 1 ? 's' : ''} selected</span>
+                        <button onClick={() => setBulkDeleteLSAConfirm(false)} className="text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1 hover:bg-gray-50">Cancel</button>
+                        {bulkDeleteLSAConfirm ? (
+                          <>
+                            <button onClick={() => setBulkDeleteLSAConfirm(false)} className="text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1 hover:bg-gray-50">Keep</button>
+                            <button onClick={handleBulkDeleteLSA} className="text-sm font-bold text-white bg-red-500 rounded-lg px-4 py-1 hover:bg-red-600">Confirm Delete</button>
+                          </>
+                        ) : (
+                          <button onClick={() => setBulkDeleteLSAConfirm(true)} className="text-sm font-bold text-white bg-red-500 rounded-lg px-4 py-1 hover:bg-red-600">Delete Selected</button>
+                        )}
+                      </div>
+                    )}
+                    {bulkDeleteLSAConfirm && seccion.area === 'google_ads' && selectedLSATaskIds.size > 0 && (
+                      <div className="px-6 py-3 bg-red-50 border-b border-red-200">
+                        <p className="text-sm font-semibold text-red-700">Delete {selectedLSATaskIds.size} LSA task{selectedLSATaskIds.size !== 1 ? 's' : ''}? This cannot be undone.</p>
+                      </div>
+                    )}
                     {secTasks.length > 0 ? (
-                      secTasks.map(task => (
-                        <TaskItem
-                          key={task.id}
-                          task={task}
-                          profiles={profiles}
-                          onEdit={handleOpenEdit}
-                          isHighlighted={task.id === highlightTaskId}
-                          clientName={activeClient?.name}
-                        />
-                      ))
+                      secTasks.map(task => {
+                        const section = secciones.find(s => s.id === task.seccion_id)
+                        const isLSA = isLSATask(task, section)
+                        return (
+                          <TaskItem
+                            key={task.id}
+                            task={task}
+                            profiles={profiles}
+                            onEdit={handleOpenEdit}
+                            isHighlighted={task.id === highlightTaskId}
+                            clientName={activeClient?.name}
+                            isLSATask={isLSA}
+                            isSelected={selectedLSATaskIds.has(task.id)}
+                            onSelectLSA={isLSA ? toggleLSATaskSelection : undefined}
+                          />
+                        )
+                      })
                     ) : (
                       <div className="px-6 py-8 text-center bg-gray-50/30">
                         <p className="text-sm text-gray-400 font-medium">
