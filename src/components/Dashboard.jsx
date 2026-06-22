@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { db, auth } from '../lib/firebase'
 import { collection, query, onSnapshot, getDocs, orderBy, updateDoc, doc, addDoc, deleteDoc, writeBatch } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings, Pencil, Trash2, ClipboardList, Handshake } from 'lucide-react'
+import { LogOut, Plus, CheckCircle2, LayoutGrid, Megaphone, Search, Target, Globe, Users, ArrowLeft, BarChart3, ChevronDown, Clock, Wallet, Grid3x3, Settings, Pencil, Trash2, ClipboardList, Handshake, ArrowRightLeft } from 'lucide-react'
 import FilterBar from './FilterBar'
 import TaskModal from './TaskModal'
 import TaskItem from './TaskItem'
@@ -12,6 +12,7 @@ import BudgetsView from './BudgetsView'
 import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
+import ReassignTasksModal from './ReassignTasksModal'
 import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21, runPatchV22, runPatchV23, runPatchV24, runPatchV25, runPatchV26, runPatchV27, runPatchV28 } from '../lib/migration'
 import { AREAS, ROLES } from '../lib/constants'
 
@@ -100,6 +101,9 @@ export default function Dashboard({ user, profile }) {
   // Bulk delete LSA tasks
   const [selectedLSATaskIds, setSelectedLSATaskIds] = useState(new Set())
   const [bulkDeleteLSAConfirm, setBulkDeleteLSAConfirm] = useState(false)
+
+  // Bulk reassign tasks between team members
+  const [showReassignModal, setShowReassignModal] = useState(false)
 
   const expandAll = useCallback(() => {
     setCollapsedSections(prev => {
@@ -418,6 +422,21 @@ export default function Dashboard({ user, profile }) {
     setBulkDeleteLSAConfirm(false)
   }, [selectedLSATaskIds])
 
+  const handleBulkReassign = useCallback(async (fromId, toId) => {
+    const tasks = allTareas.filter(t => t.responsable_id === fromId)
+    if (tasks.length === 0 || fromId === toId) return
+    for (let i = 0; i < tasks.length; i += 100) {
+      const batch = writeBatch(db)
+      tasks.slice(i, i + 100).forEach(task => {
+        batch.update(doc(db, 'checklist_tasks', task.id), {
+          responsable_id: toId,
+          actualizado_en: new Date().toISOString(),
+        })
+      })
+      await batch.commit()
+    }
+  }, [allTareas])
+
   const toggleLSATaskSelection = useCallback((taskId) => {
     setSelectedLSATaskIds(prev => {
       const next = new Set(prev)
@@ -634,6 +653,13 @@ export default function Dashboard({ user, profile }) {
                 </button>
               </div>
               <button
+                onClick={() => setShowReassignModal(true)}
+                className="flex items-center bg-white text-gray-700 px-5 py-2.5 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all shadow-sm font-bold"
+              >
+                <ArrowRightLeft className="w-5 h-5 mr-1.5" />
+                Transferir tareas
+              </button>
+              <button
                 onClick={() => setShowNewClientModal(true)}
                 disabled={isCreatingClient}
                 className="flex items-center bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-black transition-all shadow-md hover:shadow-lg font-bold disabled:opacity-50"
@@ -748,6 +774,13 @@ export default function Dashboard({ user, profile }) {
           isOpen={showProfileModal}
           onClose={() => setShowProfileModal(false)}
           onProfileUpdated={handleProfileUpdated}
+        />
+        <ReassignTasksModal
+          isOpen={showReassignModal}
+          onClose={() => setShowReassignModal(false)}
+          profiles={profiles}
+          allTareas={allTareas}
+          onConfirm={handleBulkReassign}
         />
       </div>
     )
