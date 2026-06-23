@@ -13,7 +13,10 @@ import ServicesView from './ServicesView'
 import NotificationBell from './NotificationBell'
 import ProfileModal from './ProfileModal'
 import ReassignTasksModal from './ReassignTasksModal'
-import { runInitialMigrationAndSeed, createNewClientWithTemplate, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21, runPatchV22, runPatchV23, runPatchV24, runPatchV25, runPatchV26, runPatchV27, runPatchV28 } from '../lib/migration'
+import AssignTasksModal from './AssignTasksModal'
+import ApplyTemplateModal from './ApplyTemplateModal'
+import TeamModal from './TeamModal'
+import { runInitialMigrationAndSeed, createNewClientWithTemplate, applyTemplateToClient, fetchCustomRoles, runPatchV1, runResetToUserTasks, runPatchV4, runPatchV5, runPatchV6, runPatchV7, runPatchV8, runPatchV9, runPatchV10, runPatchV11, runPatchV12, runPatchV13, runPatchV14, runPatchV15, runPatchV16, runPatchV17, runPatchV18, runPatchV19, runPatchV20, runPatchV21, runPatchV22, runPatchV23, runPatchV24, runPatchV25, runPatchV26, runPatchV27, runPatchV28 } from '../lib/migration'
 import { AREAS, ROLES } from '../lib/constants'
 
 const AREAS_WITH_ICONS = [
@@ -104,6 +107,14 @@ export default function Dashboard({ user, profile }) {
 
   // Bulk reassign tasks between team members
   const [showReassignModal, setShowReassignModal] = useState(false)
+  // Bulk assign selected tasks to a person
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  // Apply standard template (sections + tasks) to a client
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
+  // Team / positions management
+  const [showTeamModal, setShowTeamModal] = useState(false)
+  // Custom positions (roles) added by the user, merged with built-in ROLES
+  const [customRoles, setCustomRoles] = useState([])
 
   const expandAll = useCallback(() => {
     setCollapsedSections(prev => {
@@ -208,6 +219,7 @@ export default function Dashboard({ user, profile }) {
 
         const profSnap = await getDocs(collection(db, 'profiles'))
         setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+        setCustomRoles(await fetchCustomRoles())
       } catch (err) {
         console.error('Error fetching data:', err)
         setError('Failed to load data. Please refresh the page.')
@@ -305,6 +317,38 @@ export default function Dashboard({ user, profile }) {
     const profSnap = await getDocs(collection(db, 'profiles'))
     setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
   }, [])
+
+  // Built-in roles + user-added positions, used in every role dropdown
+  const teamRoles = useMemo(() => [...ROLES, ...customRoles], [customRoles])
+
+  // Reload team data after changes in the Team panel (people + custom roles)
+  const refreshTeam = useCallback(async () => {
+    const profSnap = await getDocs(collection(db, 'profiles'))
+    setProfiles(profSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    setCustomRoles(await fetchCustomRoles())
+  }, [])
+
+  // Bulk-assign selected tasks to a single person
+  const handleBulkAssign = useCallback(async (taskIds, toId) => {
+    if (!taskIds.length || !toId) return
+    for (let i = 0; i < taskIds.length; i += 100) {
+      const batch = writeBatch(db)
+      taskIds.slice(i, i + 100).forEach(id => {
+        batch.update(doc(db, 'checklist_tasks', id), {
+          responsable_id: toId,
+          actualizado_en: new Date().toISOString(),
+        })
+      })
+      await batch.commit()
+    }
+  }, [])
+
+  // Apply the standard template (sections + tasks) to the active client
+  const handleApplyTemplate = useCallback(async (selectedAreas) => {
+    if (!activeClient) return { created: 0, sectionsCreated: 0 }
+    const existing = allTareas.filter(t => t.client_id === activeClient.id)
+    return await applyTemplateToClient(activeClient.id, user.uid, selectedAreas, secciones, existing)
+  }, [activeClient, allTareas, secciones, user.uid])
 
   const handleOpenEdit = useCallback((task) => {
     setEditingTask(task)
@@ -653,8 +697,22 @@ export default function Dashboard({ user, profile }) {
                 </button>
               </div>
               <button
+                onClick={() => setShowTeamModal(true)}
+                className="flex items-center bg-white text-gray-700 px-4 py-2.5 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all shadow-sm font-bold"
+              >
+                <Users className="w-5 h-5 mr-1.5" />
+                Equipo
+              </button>
+              <button
+                onClick={() => setShowAssignModal(true)}
+                className="flex items-center bg-white text-gray-700 px-4 py-2.5 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all shadow-sm font-bold"
+              >
+                <Handshake className="w-5 h-5 mr-1.5" />
+                Asignar tareas
+              </button>
+              <button
                 onClick={() => setShowReassignModal(true)}
-                className="flex items-center bg-white text-gray-700 px-5 py-2.5 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all shadow-sm font-bold"
+                className="flex items-center bg-white text-gray-700 px-4 py-2.5 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all shadow-sm font-bold"
               >
                 <ArrowRightLeft className="w-5 h-5 mr-1.5" />
                 Transferir tareas
@@ -782,6 +840,24 @@ export default function Dashboard({ user, profile }) {
           allTareas={allTareas}
           onConfirm={handleBulkReassign}
         />
+        <AssignTasksModal
+          isOpen={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          profiles={profiles}
+          clients={clients}
+          secciones={secciones}
+          allTareas={allTareas}
+          onConfirm={handleBulkAssign}
+        />
+        <TeamModal
+          isOpen={showTeamModal}
+          onClose={() => setShowTeamModal(false)}
+          profiles={profiles}
+          allTareas={allTareas}
+          builtinRoles={ROLES}
+          customRoles={customRoles}
+          onChanged={refreshTeam}
+        />
       </div>
     )
   }
@@ -807,7 +883,23 @@ export default function Dashboard({ user, profile }) {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowTemplateModal(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-white text-gray-600 hover:text-brand-primary rounded-lg border border-gray-200 shadow-sm transition-colors hover:border-brand-light text-sm font-bold"
+              title="Crear secciones y tareas estándar"
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span className="hidden lg:inline">Plantilla</span>
+            </button>
+            <button
+              onClick={() => setShowAssignModal(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-white text-gray-600 hover:text-brand-primary rounded-lg border border-gray-200 shadow-sm transition-colors hover:border-brand-light text-sm font-bold"
+              title="Asignar tareas a una persona"
+            >
+              <Handshake className="w-4 h-4" />
+              <span className="hidden lg:inline">Asignar</span>
+            </button>
             <button
               onClick={() => setShowProfileModal(true)}
               className="hidden sm:flex flex-col items-end px-3 py-1 rounded-lg hover:bg-gray-100 transition"
@@ -992,6 +1084,7 @@ export default function Dashboard({ user, profile }) {
             setSearchQuery={setSearchQuery}
             hideCompleted={hideCompleted}
             setHideCompleted={setHideCompleted}
+            roles={teamRoles}
           />
 
           <button
@@ -1297,6 +1390,7 @@ export default function Dashboard({ user, profile }) {
           profile={profile}
           currentActiveArea={activeArea}
           activeClientId={activeClient.id}
+          roles={teamRoles}
         />
       )}
 
@@ -1305,6 +1399,22 @@ export default function Dashboard({ user, profile }) {
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         onProfileUpdated={handleProfileUpdated}
+      />
+      <ApplyTemplateModal
+        isOpen={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        clientName={activeClient?.name}
+        onConfirm={handleApplyTemplate}
+      />
+      <AssignTasksModal
+        isOpen={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+        profiles={profiles}
+        clients={clients}
+        secciones={secciones}
+        allTareas={allTareas}
+        defaultClientId={activeClient?.id}
+        onConfirm={handleBulkAssign}
       />
     </div>
   )

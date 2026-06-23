@@ -4,7 +4,7 @@ import { collection, addDoc, doc, updateDoc } from 'firebase/firestore'
 import { X, LayoutTemplate, Link2 } from 'lucide-react'
 import { ROLES, AREAS } from '../lib/constants'
 
-export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentActiveArea, activeClientId }) {
+export default function TaskModal({ isOpen, onClose, task, secciones, profiles, profile, currentActiveArea, activeClientId, roles = ROLES }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -229,7 +229,7 @@ export default function TaskModal({ isOpen, onClose, task, secciones, profiles, 
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all bg-white shadow-sm font-medium text-gray-700"
                 >
                   <option value="">Any role</option>
-                  {ROLES.map(r => (
+                  {roles.map(r => (
                     <option key={r} value={r}>{r}</option>
                   ))}
                 </select>

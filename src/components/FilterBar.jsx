@@ -16,6 +16,7 @@ export default function FilterBar({
   setSearchQuery,
   hideCompleted,
   setHideCompleted,
+  roles = ROLES,
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -53,7 +54,7 @@ export default function FilterBar({
         className={selectClass}
       >
         <option value="all">All roles</option>
-        {ROLES.map(r => (
+        {roles.map(r => (
           <option key={r} value={r}>{r}</option>
         ))}
       </select>

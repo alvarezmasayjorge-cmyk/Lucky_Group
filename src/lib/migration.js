@@ -2150,6 +2150,95 @@ export const runPatchV28 = async (userId) => {
   await setDoc(patchRef, { applied_at: now, applied_by: userId, clients_deleted: targets.length, tasks_deleted: taskDocs.length })
 }
 
+// Apply the standard template (sections + tasks) to an EXISTING client, limited
+// to the chosen areas (e.g. ['onboarding','meta_ads','google_ads','lsa','ghl']).
+// - Creates any missing global section that the template needs for those areas.
+// - Seeds the template tasks for the client, skipping ones it already has
+//   (matched by title + section) so it's safe to run more than once.
+// Returns { created, sectionsCreated }.
+export const applyTemplateToClient = async (clientId, userId, selectedAreas, globalSections, existingClientTasks = []) => {
+  const now = new Date().toISOString()
+  const areas = new Set(selectedAreas)
+
+  // Sections from the template that belong to the selected areas.
+  const neededSections = TEMPLATE_SECTIONS.filter(s => areas.has(s.area))
+
+  // Work on a mutable copy so we can append newly-created sections.
+  let sections = [...globalSections]
+  let sectionsCreated = 0
+  const maxOrden = Math.max(...sections.map(s => s.orden || 0), 0)
+
+  // Create any missing global sections first (need their IDs for the tasks).
+  for (const tpl of neededSections) {
+    const exists = sections.find(s => s.nombre === tpl.name && s.area === tpl.area)
+    if (exists) continue
+    const ref = doc(collection(db, 'checklist_sections'))
+    const data = { nombre: tpl.name, area: tpl.area, orden: maxOrden + 1 + sectionsCreated, creado_en: now }
+    await setDoc(ref, data)
+    sections.push({ id: ref.id, ...data })
+    sectionsCreated++
+  }
+
+  // Names of sections in the chosen areas.
+  const sectionNamesInAreas = new Set(neededSections.map(s => s.name))
+
+  // Build a lookup of tasks the client already has (per section) to avoid dupes.
+  const existingKey = new Set(
+    existingClientTasks.map(t => `${t.seccion_id}|||${(t.titulo || '').trim()}`)
+  )
+
+  const tasksToCreate = TEMPLATE_TASKS.filter(t => sectionNamesInAreas.has(t.sectionName))
+
+  let created = 0
+  let buffer = []
+  for (const tpl of tasksToCreate) {
+    const section = sections.find(s => s.nombre === tpl.sectionName)
+    if (!section) continue
+    const key = `${section.id}|||${tpl.title.trim()}`
+    if (existingKey.has(key)) continue
+    buffer.push({ tpl, section })
+  }
+
+  for (let i = 0; i < buffer.length; i += 100) {
+    const batch = writeBatch(db)
+    buffer.slice(i, i + 100).forEach(({ tpl, section }) => {
+      const taskRef = doc(collection(db, 'checklist_tasks'))
+      batch.set(taskRef, {
+        titulo: tpl.title,
+        responsable_rol: tpl.role || null,
+        seccion_id: section.id,
+        client_id: clientId,
+        completed: false,
+        status: 'pending',
+        prioridad: 'medium',
+        responsable_id: null,
+        creado_por: userId,
+        creado_en: now,
+        actualizado_en: now,
+      })
+      created++
+    })
+    await batch.commit()
+  }
+
+  return { created, sectionsCreated }
+}
+
+// ─── Custom team positions (roles) stored in Firestore ───────────────────────
+// Built-in ROLES live in constants.js; these are extra positions the user adds
+// (e.g. "Media Buyer", "Editor"). Stored as a single doc app_config/team_roles.
+export const fetchCustomRoles = async () => {
+  const ref = doc(db, 'app_config', 'team_roles')
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return []
+  return snap.data().roles || []
+}
+
+export const saveCustomRoles = async (roles) => {
+  const ref = doc(db, 'app_config', 'team_roles')
+  await setDoc(ref, { roles, actualizado_en: new Date().toISOString() })
+}
+
 export const createNewClientWithTemplate = async (clientName, userId, globalSections) => {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
